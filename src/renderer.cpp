@@ -19,12 +19,15 @@ namespace {
         }
 
 //        DrawCube({1, 1, 1}, VS, VS, VS, RED);
+        DrawLine3D({0, 0, 0}, {1, 0, 0}, RED);
+        DrawLine3D({0, 0, 0}, {0, 0, 1}, GREEN);
 
-        Vector3 v1{0, 0, 0};
-        Vector3 v2{1, 1, 1};
-        Vector3 v3{0.9, 0.5, 0.5};
 
-        DrawTriangle3D(v1, v2, v3, RED);
+//        Vector3 v1{0, 0, 0};
+//        Vector3 v2{1, 0, 1};
+//        Vector3 v3{0.8, 0, 0.5};
+//
+//        DrawTriangle3D(v1, v2, v3, RED);
     }
 }
 
@@ -39,7 +42,7 @@ int Renderer::render(const std::unordered_set<Voxelizer::Voxel, Voxelizer::Voxel
     camera.position = Vector3{0.0f, 2.0f, 0.0f};
     camera.target = Vector3{0.0f, 0.0f, 0.0f};
     camera.up = Vector3{0.0f, 1.0f, 0.0f};
-    camera.fovy = 45.0f;
+    camera.fovy = 80.0f;
     camera.projection = CAMERA_PERSPECTIVE;
     SetCameraMode(camera, CAMERA_FIRST_PERSON);
 

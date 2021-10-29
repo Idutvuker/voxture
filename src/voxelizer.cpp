@@ -133,34 +133,53 @@ namespace Voxelizer {
         vec3 d02 = (v[2] - v[0]) / (v[2][ra] - v[0][ra]);
         vec3 d12 = (v[2] - v[1]) / (v[2][ra] - v[1][ra]);
 
-        int cur = v[0][ra] + 0.5;
+        Log.info({"!!!", d01, d02, d12});
+
+        int xCur = floor(v[0][ra]);
 
         vec3 a = v[0];
-        vec3 da = d01;
-        int aEnd = v[1][ra];
+        int aEnd = ceil(v[1][ra]);
 
         vec3 b = v[0];
-        vec3 db = d02;
-        int bEnd = v[2][ra];
+        int bEnd = ceil(v[2][ra]);
 
-        while (cur <= bEnd) {
-            uvec3 t = a + vec3(0.5);
-            t[ra] = cur;
-            res.push_back(Voxel{t});
+        while (xCur <= bEnd) {
+            int yCur = floor(min(a[rb], b[rb]));
+            int yEnd = ceil(max(a[rb], b[rb]));
 
-            t = b + vec3(0.5);
-            t[ra] = cur;
-            res.push_back(Voxel{t});
+            if (a[rb] < b[rb]) {
+                yCur = floor(a[rb]);
+                yEnd = ceil(b[rb]);
+            } else {
+                yCur = floor(b[rb]);
+                yEnd = ceil(a[rb]);
+            }
+//            Log.info({a[rb], b[rb], yCur, yEnd});
 
+            float zCur = a[rc];
+            float zStep = (b[rc] - a[rc]) / (yEnd - yCur);
 
-            if (cur <= aEnd)
+            while (yCur <= yEnd) {
+                uvec3 pos;
+                pos[ra] = xCur;
+                pos[rb] = yCur;
+                pos[rc] = zCur + 0.5f;
+
+                Log.info({"cur", pos});
+
+                res.push_back(Voxel{pos});
+                yCur++;
+                zCur += zStep;
+            }
+
+            if (xCur < aEnd)
                 a += d01;
             else
                 a += d12;
 
             b += d02;
 
-            cur++;
+            xCur++;
         }
 
 

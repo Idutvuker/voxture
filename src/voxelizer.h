@@ -11,7 +11,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 GRID_SIZE = 16;
+    const u32 GRID_SIZE = 4;
     const float SPACE = 10;
 
     struct Voxel {

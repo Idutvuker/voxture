@@ -98,7 +98,7 @@ Status writePLY_triangles(const std::vector<Triangle> &data) {
 int main() {
     std::vector<Triangle> triangles;
 
-    getTriangles("models/tri.obj", triangles).assertOK();
+    getTriangles("models/cow.obj", triangles).assertOK();
 
     auto minAxis = glm::vec3(std::numeric_limits<float>::infinity());
     auto maxAxis = glm::vec3(-std::numeric_limits<float>::infinity());
@@ -120,13 +120,11 @@ int main() {
         if (diff[i] > diff[scaleAxis])
             scaleAxis = i;
 
-//    std::cout << glm::to_string(diff) << '\n';
-
-//    for (auto &t: triangles) {
-//        for (size_t i = 0; i < 3; i++) {
-//            t[i] = (t[i] - minAxis) / diff[scaleAxis];
-//        }
-//    }
+    for (auto &t: triangles) {
+        for (size_t i = 0; i < 3; i++) {
+            t[i] = (t[i] - minAxis) / diff[scaleAxis];
+        }
+    }
 
 //    for (auto &t: triangles) {
 //        std::cout << glm::to_string(t[0]) << " " << glm::to_string(t[1]) << " " << glm::to_string(t[1]) << '\n';
@@ -144,9 +142,9 @@ int main() {
         }
     }
 
-    for (const auto &v: res) {
-        std::cout << v.pos.x << ' ' << v.pos.z << ' ' <<  v.pos.y << '\n';
-    }
+//    for (const auto &v: res) {
+//        std::cout << v.pos.x << ' ' << v.pos.z << ' ' <<  v.pos.y << '\n';
+//    }
 
     Renderer::render(res);
 
