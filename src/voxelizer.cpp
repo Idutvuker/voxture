@@ -7,7 +7,7 @@
 #include <iostream>
 
 namespace Voxelizer {
-    std::vector<Voxel> voxelizeTriangle(const Triangle &tri) {
+    std::vector<Voxel> voxelizeTriangle2(const Triangle &tri) {
         const float EPS = 1e-5;
 
         using namespace glm;
@@ -16,7 +16,7 @@ namespace Voxelizer {
         vec3 v[3];
 
         for (size_t i = 0; i < 3; i++)
-            v[i] = tri[i] * float(GRID_SIZE - 1);
+            v[i] = tri[i] * float(GRID_SIZE);
 
         vec3 anorm = abs(normalize(cross(v[1] - v[0], v[2] - v[0])));
 
@@ -73,11 +73,11 @@ namespace Voxelizer {
             Log.info({"outerStep", cur, end, sideStep, s, s * cur[rb], s * end[rb]});
 
             while(s * cur[rb] < s * end[rb]) {
-                res.push_back(Voxel{ .pos = {cur.x + 0.5f, cur.y + 0.5f, cur.z + 0.5f} });
+                res.push_back(Voxel{ .pos = cur + vec3(0.5) });
                 cur += sideStep;
             }
 
-            res.push_back(Voxel{ .pos = {cur.x + 0.5f, cur.y + 0.5f, cur.z + 0.5f} });
+            res.push_back(Voxel{ .pos = cur + vec3(0.5f) });
 //            Log.info({sideStep});
 
             a += d1;
@@ -97,6 +97,81 @@ namespace Voxelizer {
         return res;
     }
 
+    std::vector<Voxel> voxelizeTriangle(const Triangle &tri) {
+        using namespace glm;
+        std::vector<Voxel> res;
+
+        vec3 v[3];
+
+        for (int i = 0; i < 3; i++)
+            v[i] = tri[i] * float(GRID_SIZE);
+
+        vec3 anorm = abs(normalize(cross(tri[1] - tri[0], tri[2] - tri[0])));
+        int nAxis = 0;
+        for (int i = 1; i < 3; i++)
+            if (anorm[i] > anorm[nAxis])
+                nAxis = i;
+
+        printf("nAxis = %d\n", nAxis);
+        Log.info({"v1", v[0], v[1], v[2]});
+
+        int ra = nAxis == 1 ? 0 : 1; // raster axis
+        int rb = nAxis == 2 ? 0 : 2;
+        int rc = nAxis;
+
+        Log.info({"axis", ra, rb, rc});
+
+        for (int i = 0; i < 2; i++)
+            for (int j = i + 1; j < 3; j++)
+                if (v[j][ra] < v[i][ra])
+                    std::swap(v[i], v[j]);
+
+
+        Log.info({"sorted", v[0], v[1], v[2]});
+
+        vec3 d01 = (v[1] - v[0]) / (v[1][ra] - v[0][ra]);
+        vec3 d02 = (v[2] - v[0]) / (v[2][ra] - v[0][ra]);
+        vec3 d12 = (v[2] - v[1]) / (v[2][ra] - v[1][ra]);
+
+        int cur = v[0][ra] + 0.5;
+
+        vec3 a = v[0];
+        vec3 da = d01;
+        int aEnd = v[1][ra];
+
+        vec3 b = v[0];
+        vec3 db = d02;
+        int bEnd = v[2][ra];
+
+        while (cur <= bEnd) {
+            uvec3 t = a + vec3(0.5);
+            t[ra] = cur;
+            res.push_back(Voxel{t});
+
+            t = b + vec3(0.5);
+            t[ra] = cur;
+            res.push_back(Voxel{t});
+
+
+            if (cur <= aEnd)
+                a += d01;
+            else
+                a += d12;
+
+            b += d02;
+
+            cur++;
+        }
+
+
+//        res.push_back(Voxel{v[0]});
+//        res.push_back(Voxel{v[1]});
+//        res.push_back(Voxel{v[2]});
+//        Log.info({"v2", v[0], v[1], v[2]});
+
+        return res;
+    }
+
     void voxelize(const std::vector<Triangle> &triangles) {
         std::unordered_map<uint64_t, Voxel> map;
 
@@ -108,5 +183,9 @@ namespace Voxelizer {
 
     bool Voxel::operator==(const Voxel &other) const {
         return pos == other.pos;
+    }
+
+    size_t VoxelHash::operator()(const Voxel &voxel) const {
+        return ((voxel.pos.x << 20) + (voxel.pos.y << 10) + voxel.pos.z);
     }
 }

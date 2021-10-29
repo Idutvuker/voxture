@@ -18,6 +18,7 @@ public:
         Printable(T t) : repr(std::to_string(t)) {}
 
         Printable(glm::vec3 t);
+        Printable(glm::uvec3 t);
         Printable(const char *cStr);
     };
 

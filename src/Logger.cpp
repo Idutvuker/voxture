@@ -7,6 +7,7 @@ const std::string &Logger::Printable::getRepr() const {
 }
 
 Logger::Printable::Printable(glm::vec3 t) : repr(glm::to_string(t)) {}
+Logger::Printable::Printable(glm::uvec3 t) : repr(glm::to_string(t)) {}
 
 Logger::Printable::Printable(const char *cStr) : repr(cStr) {}
 

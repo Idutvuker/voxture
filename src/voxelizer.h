@@ -11,7 +11,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 GRID_SIZE = 32;
+    const u32 GRID_SIZE = 16;
     const float SPACE = 10;
 
     struct Voxel {
@@ -20,9 +20,7 @@ namespace Voxelizer {
     };
 
     struct VoxelHash {
-        size_t operator () (const Voxel &voxel) const {
-            return ((voxel.pos.x << 20) + (voxel.pos.y << 10) + voxel.pos.z);
-        }
+        size_t operator () (const Voxel &voxel) const;
     };
 
     std::vector<Voxel> voxelizeTriangle(const Triangle &tri);
