@@ -1,12 +1,12 @@
+#include "renderer/renderer.h"
 #include "util/Status.h"
-#include "triangle.h"
-#include "voxelizer.h"
-#include "renderer.h"
+#include "geom/triangle.h"
+#include "geom/voxelizer.h"
+#include "renderer/rendererRaylib.h"
+#include "util/Logger.h"
 
 #include <iostream>
-#include <unordered_map>
 #include <fstream>
-
 #include <obj_loader.h>
 
 #include <glm/vec3.hpp>
@@ -98,10 +98,12 @@ Status writePLY_triangles(const std::vector<Triangle> &data) {
 int main() {
     std::vector<Triangle> triangles;
 
-    getTriangles("models/cow.obj", triangles).assertOK();
+    getTriangles("resources/models/cow.obj", triangles).assertOK();
 
     auto minAxis = glm::vec3(std::numeric_limits<float>::infinity());
     auto maxAxis = glm::vec3(-std::numeric_limits<float>::infinity());
+
+    const float margin = 0;
 
     for (auto &t: triangles) {
         for (int i = 0; i < 3; i++) {
@@ -112,8 +114,10 @@ int main() {
         }
     }
 
+    minAxis -= margin;
+    maxAxis += margin;
+
     auto diff = maxAxis - minAxis;
-    std::cout << glm::to_string(minAxis) << " " << glm::to_string(maxAxis) << '\n';
 
     int scaleAxis = 0;
     for (int i = 1; i < 3; i++)
@@ -122,31 +126,23 @@ int main() {
 
     for (auto &t: triangles) {
         for (size_t i = 0; i < 3; i++) {
-            t[i] = (t[i] - minAxis) / diff[scaleAxis];
+            t[i] = (t[i] - minAxis) / (diff[scaleAxis]);
         }
     }
 
-//    for (auto &t: triangles) {
-//        std::cout << glm::to_string(t[0]) << " " << glm::to_string(t[1]) << " " << glm::to_string(t[1]) << '\n';
-//    }
+    Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(triangles);
+    auto treeLevels = Voxelizer::buildLevels(voxelSet);
 
-//    writePLY_triangles(triangles).assertOK();
 
-    std::ofstream outputFile("mytest/voxels.txt");
+//    RendererRaylib::render(triangles, treeLevels);
 
-    std::unordered_set<Voxelizer::Voxel, Voxelizer::VoxelHash> res;
-    for (const auto &tri: triangles) {
-        auto vt = Voxelizer::voxelizeTriangle(tri);
-        for (const auto &v: vt) {
-            res.insert(v);
-        }
-    }
+    Renderer::RenderData data;
+    data.mesh = triangles;
+    data.vertexShaderFilepath = "resources/shaders/default.vs.glsl";
+    data.fragmentShaderFilepath = "resources/shaders/default.fs.glsl";
 
-//    for (const auto &v: res) {
-//        std::cout << v.pos.x << ' ' << v.pos.z << ' ' <<  v.pos.y << '\n';
-//    }
-
-    Renderer::render(res);
+    Renderer r = Renderer(data);
+    r.mainLoop();
 
     return 0;
 }
