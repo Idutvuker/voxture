@@ -1459,7 +1459,7 @@ static bool exportGroupsToShape(shape_t *shape, const PrimGroup &prim_group,
           real_t v3y = v[vi3 * 3 + 1];
           real_t v3z = v[vi3 * 3 + 2];
 
-          // There are two candidates to split the quad into two triangles.
+          // There are two candidates to split the quad into two indices.
           //
           // Choose the shortest edge.
           // TODO: Is it better to determine the edge to split by calculating

@@ -2,7 +2,6 @@
 #include "util/Status.h"
 #include "geom/triangle.h"
 #include "geom/voxelizer.h"
-#include "renderer/rendererRaylib.h"
 #include "util/Logger.h"
 
 #include <iostream>
@@ -58,20 +57,19 @@ Status getTriangles(const std::string &filepath, std::vector<Triangle> &res) {
 }
 
 
-
 Status writePLY_triangles(const std::vector<Triangle> &data) {
     std::string filename = "output.ply";
 
     std::string header =
-        "ply\n"
-        "format binary_little_endian 1.0\n"
-        "element vertex " + std::to_string(data.size() * 3) + "\n"
-        "property float x\n"
-        "property float y\n"
-        "property float z\n"
-        "element face " + std::to_string(data.size()) + "\n"
-        "property list uint32 uint32 vertex_indices\n"
-        "end_header\n";
+            "ply\n"
+            "format binary_little_endian 1.0\n"
+            "element vertex " + std::to_string(data.size() * 3) + "\n"
+                                                                  "property float x\n"
+                                                                  "property float y\n"
+                                                                  "property float z\n"
+                                                                  "element face " + std::to_string(data.size()) + "\n"
+                                                                                                                  "property list uint32 uint32 vertex_indices\n"
+                                                                                                                  "end_header\n";
 
     std::ofstream outputFile("output.ply", std::ios::out | std::ios::binary);
     if (outputFile.is_open()) {
@@ -92,8 +90,6 @@ Status writePLY_triangles(const std::vector<Triangle> &data) {
 
     return Status::error("Couldn't open file " + filename);
 }
-
-#include <unordered_set>
 
 int main() {
     std::vector<Triangle> triangles;
@@ -130,19 +126,17 @@ int main() {
         }
     }
 
+    glm::vec3 center = (maxAxis - minAxis) / 2.f / diff[scaleAxis];
+    Log.info({"center", center});
+
     Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(triangles);
     auto treeLevels = Voxelizer::buildLevels(voxelSet);
 
-
-//    RendererRaylib::render(triangles, treeLevels);
-
-    Renderer::RenderData data;
-    data.mesh = triangles;
-    data.vertexShaderFilepath = "resources/shaders/default.vs.glsl";
-    data.fragmentShaderFilepath = "resources/shaders/default.fs.glsl";
-
-    Renderer r = Renderer(data);
-    r.mainLoop();
+    {
+        Renderer::RenderData data{treeLevels, triangles, center};
+        Renderer r(data);
+        r.mainLoop();
+    }
 
     return 0;
 }

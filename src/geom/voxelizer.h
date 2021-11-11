@@ -11,7 +11,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 VOXELIZE_LEVEL = 7;
+    const u32 VOXELIZE_LEVEL = 6;
 
     struct Voxel {
         glm::ivec3 pos;
@@ -49,10 +49,10 @@ namespace Voxelizer {
         const auto levels = origSet.level;
 
         OctreeLevels res;
-        res.data.reserve(levels);
+        res.data.reserve(levels + 1);
 
         res.data.push_back(origSet);
-        for (u32 i = 1; i < origSet.level; i++) {
+        for (u32 i = 1; i <= origSet.level; i++) {
             VoxelSet newSet(levels - i);
 
             for (const auto &v: res.data[i - 1].set) {

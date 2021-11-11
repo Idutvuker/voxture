@@ -3,7 +3,6 @@ project(voxture)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(external)
-link_directories(lib)
 
 find_package(glfw3 REQUIRED)
 add_library(glad "external/glad/glad.h" "external/src/glad.c")
@@ -12,7 +11,16 @@ file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
 set(TARGET_NAME voxture)
 add_executable(${TARGET_NAME} ${SRC_FILES})
 
-target_link_libraries(${TARGET_NAME} raylib glfw glad ${CMAKE_DL_LIBS})
+
+set(IMGUI_PATH "external/imgui")
+
+file(GLOB IMGUI_SOURCES ${IMGUI_PATH}/*.cpp)
+add_library("ImGui" STATIC ${IMGUI_SOURCES} ${IMGUI_PATH}/backends/imgui_impl_glfw.cpp ${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp)
+target_include_directories("ImGui" PUBLIC ${IMGUI_PATH})
+
+target_link_libraries(${TARGET_NAME} PUBLIC ImGui glfw glad ${CMAKE_DL_LIBS})
+
+
 
 if(MSVC)
     target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)

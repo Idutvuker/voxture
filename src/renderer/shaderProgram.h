@@ -45,6 +45,9 @@ struct ShaderProgram {
 private:
     static std::string readFile(const std::string &filepath) {
         std::ifstream t(filepath);
+        if (!t)
+            throw std::runtime_error("File can't be open: " + filepath);
+
         std::stringstream buffer;
         buffer << t.rdbuf();
         return buffer.str();
