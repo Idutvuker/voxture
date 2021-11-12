@@ -1,26 +1,27 @@
 #version 430 core
 
-const uint DATA_SIZE = 2;
+const uint MAX_LEVEL = 6;
 
 in vec3 fPos;
 in vec4 gl_FragCoord;
 
 out vec4 FragColor;
 
-layout(std430, binding = 0) buffer Voxels {
-    uint VoxelData[];
-};
+uniform uint uLevel = 0;
+
+//layout(std430, binding = 0) buffer Voxels {
+//    uint VoxelData[];
+//};
 
 void main() {
     //vec4 pos = gl_FragCoord;
     //float c = clamp(pow(pos.z, 30), 0, 1);
 
-    vec3 vox = uvec3(fPos * 255);
+    uint gridSize = 1 << uLevel;
 
-    if (c.x > 0.5)
-        c.x = float(VoxelData[0]);
-    else
-        c.x = float(VoxelData[1]);
+    uvec3 vox = uvec3(fPos * (gridSize - 1) + 0.5f);
 
-    FragColor = vec4(c, 1.0);
+    vec3 color = vec3(vox) / gridSize;
+
+    FragColor = vec4(color, 1.0);
 }

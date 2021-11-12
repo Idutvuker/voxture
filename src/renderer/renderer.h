@@ -19,10 +19,10 @@ struct Renderer {
     Resources res;
 
     struct RenderData {
-        Voxelizer::OctreeLevels &treeLevels;
+        Voxelizer::Octree &treeLevels;
         std::vector<Triangle> &mesh;
         glm::vec3 center;
-    } data;
+    } shared;
 
     GLuint VAO = 0;
     GLuint VBO = 0;
@@ -34,7 +34,7 @@ struct Renderer {
             glfwSetWindowShouldClose(window, true);
     }
 
-    GLuint SSBO;
+    GLuint SSBO = 0;
 
     void initRes() {
         glGenVertexArrays(1, &VAO);
@@ -43,7 +43,7 @@ struct Renderer {
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(data.mesh.size() * sizeof(Triangle)), data.mesh.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(shared.mesh.size() * sizeof(Triangle)), shared.mesh.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
@@ -52,10 +52,10 @@ struct Renderer {
 
         //GLuint shader_data[2] = {0, 1};
 
-        glGenBuffers(1, &SSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(shader_data), shader_data, GL_STATIC_DRAW);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
+//        glGenBuffers(1, &SSBO);
+//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
+//        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(shader_data), shader_data, GL_STATIC_DRAW);
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
 
 //        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
@@ -67,17 +67,20 @@ struct Renderer {
         mat4 MVPMat = camera.projection * camera.view;
 
         GLint MVPLoc = glGetUniformLocation(res.modelSP.programID, "uModelViewProjMat");
+        GLint LevelLoc = glGetUniformLocation(res.modelSP.programID, "uLevel");
+
         glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, glm::value_ptr(MVPMat));
+        glUniform1ui(LevelLoc, treeLevel);
 
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * data.mesh.size()));
+        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * shared.mesh.size()));
     }
 
     void draw() {
         if (modelMode)
             drawModel();
         else
-            Cube::drawVoxels(camera, res, data.treeLevels.data[treeLevel]);
+            Cube::drawVoxels(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
     }
 
     float rotX = 0;
@@ -89,7 +92,7 @@ struct Renderer {
     void update(float delta) {
         using namespace glm;
 
-        static mat4 viewBase = translate(mat4(1.0f), -data.center);
+        static mat4 viewBase = translate(mat4(1.0f), -shared.center);
 
         camera.view =
                 translate(mat4(1), vec3(0, 0, -camRadius)) *
@@ -119,8 +122,8 @@ struct Renderer {
                 ImGui::SliderFloat("rot Y", &rotY, -glm::half_pi<float>(), glm::half_pi<float>());
                 ImGui::SliderFloat("cam Rad", &camRadius, 0.5, 4);
 
-                ImGui::SliderInt("Tree level", &treeLevel, 0, int(data.treeLevels.data.size()) - 1);
-                ImGui::Text("Voxels: %d", int(data.treeLevels.data[treeLevel].set.size()));
+                ImGui::SliderInt("Tree level", &treeLevel, 0, int(shared.treeLevels.levels.size()) - 1);
+                ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
 
                 ImGui::Checkbox("Draw Model", &modelMode);
 
@@ -142,7 +145,7 @@ struct Renderer {
     }
 
     explicit Renderer(RenderData _renderData) :
-            data(_renderData),
+            shared(_renderData),
             camera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
     {
         initRes();

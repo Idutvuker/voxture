@@ -130,7 +130,8 @@ int main() {
     Log.info({"center", center});
 
     Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(triangles);
-    auto treeLevels = Voxelizer::buildLevels(voxelSet);
+    auto colors = Voxelizer::colorize(voxelSet);
+    auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
 
     {
         Renderer::RenderData data{treeLevels, triangles, center};

@@ -68,7 +68,7 @@ namespace Cube {
         glEnableVertexAttribArray(0);
     }
 
-    void drawVoxels(const Camera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet) {
+    void drawVoxels(const Camera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet, const Voxelizer::VoxelColors &colors) {
         using namespace glm;
 
         res.voxelSP.use();
@@ -86,8 +86,14 @@ namespace Cube {
             mat4 MVPMat = ViewProjMat * model;
 
             glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
-            vec3 color = pos * voxelSize;
-            glUniform3fv(ColorLoc, 1, value_ptr(color));
+
+//            vec3 color = pos * voxelSize;
+//            glUniform3fv(ColorLoc, 1, value_ptr(color));
+
+            if (auto it = colors.find(voxel); it != colors.end()) {
+                vec3 color = vec3(it->second) / 255.f;
+                glUniform3fv(ColorLoc, 1, value_ptr(color));
+            }
 
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
