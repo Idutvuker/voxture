@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 project(voxture)
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(external)
+include_directories(external "external/glad/include")
 
 find_package(glfw3 REQUIRED)
-add_library(glad "external/glad/glad.h" "external/src/glad.c")
+add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c")
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
 set(TARGET_NAME voxture)

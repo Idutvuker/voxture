@@ -14,7 +14,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 VOXELIZE_LEVEL = 6;
+    const u32 VOXELIZE_LEVEL = 2;
 
     struct Voxel {
         glm::ivec3 pos;
@@ -45,6 +45,18 @@ namespace Voxelizer {
     using VoxelColors = std::unordered_map<Voxel, glm::u8vec3, VoxelHash>;
 
     struct Octree {
+        static constexpr std::array<glm::ivec3, 8> VOX_OFFSET = {
+                glm::ivec3(0, 0, 0),
+                glm::ivec3(0, 0, 1),
+                glm::ivec3(0, 1, 0),
+                glm::ivec3(0, 1, 1),
+
+                glm::ivec3(1, 0, 0),
+                glm::ivec3(1, 0, 1),
+                glm::ivec3(1, 1, 0),
+                glm::ivec3(1, 1, 1),
+        };
+
         std::vector<VoxelSet> levels;
         VoxelColors colors; // ColorMap of the last level
 
@@ -52,6 +64,7 @@ namespace Voxelizer {
 
         struct Node {
             static constexpr u32 WHITE = 0x00ffffff;
+            static constexpr u32 PARENT_BIT = 1<<31;
 
             u32 vox[8];
         };
@@ -59,7 +72,6 @@ namespace Voxelizer {
         std::vector<Node> rawData;
 
         struct Temp {
-            size_t v;
             size_t depth;
             Voxel voxel;
         };
@@ -67,19 +79,39 @@ namespace Voxelizer {
         void buildRaw() {
             std::queue<Temp> q;
 
-            q.push(Temp{0, 0, { .pos = {0, 0, 0} }});
+            q.push(Temp{0, { .pos = {0, 0, 0} }});
+            u32 treeSize = 1;
 
             while(!q.empty()) {
                 Temp t = q.front();
-
                 q.pop();
 
                 auto &level = levels.at(t.depth);
 
-                if (auto it = level.set.find(t.voxel); it != level.set.end()) {
+                Node node{};
 
+                for (size_t i = 0; i < VOX_OFFSET.size(); i++) {
+                    Voxel newVoxel = { .pos = t.voxel.pos * 2 + VOX_OFFSET[i] };
+
+                    if (auto it = level.set.find(t.voxel); it != level.set.end()) {
+                        if (t.depth == levels.size() - 2) {
+                            glm::uvec3 colorVec = colors[newVoxel];
+                            u32 color = (colorVec.r << 16) + (colorVec.g << 8) + (colorVec.b);
+
+                            node.vox[i] = color;
+                        } else {
+                            q.push(Temp{t.depth + 1, newVoxel});
+
+                            u32 index = treeSize | Node::PARENT_BIT;
+                            node.vox[i] = index;
+                            treeSize++;
+                        }
+                    } else {
+                        node.vox[i] = Node::WHITE;
+                    }
                 }
 
+                rawData.push_back(node);
             }
         }
 

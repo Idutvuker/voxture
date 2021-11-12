@@ -52,12 +52,17 @@ struct Renderer {
 
         //GLuint shader_data[2] = {0, 1};
 
-//        glGenBuffers(1, &SSBO);
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
-//        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(shader_data), shader_data, GL_STATIC_DRAW);
-//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
+        auto &octree = shared.treeLevels.rawData;
 
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        glGenBuffers(1, &SSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+                     GLsizeiptr(octree.size() * sizeof(Voxelizer::Octree::Node)),
+                     octree.data(), GL_STATIC_DRAW);
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     void drawModel() const {

@@ -132,6 +132,22 @@ int main() {
     Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(triangles);
     auto colors = Voxelizer::colorize(voxelSet);
     auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
+    treeLevels.buildRaw();
+
+    using u32 = Voxelizer::u32;
+    u32 PBIT = Voxelizer::Octree::Node::PARENT_BIT;
+
+    for (size_t i = 0; i < treeLevels.rawData.size(); i++) {
+        printf("Node %u:\n", u32(i));
+        for (u32 v: treeLevels.rawData[i].vox) {
+            if (v & PBIT) {
+                printf("\t adr %u\n", (v ^ PBIT));
+            } else {
+                printf("\t color %#08x\n", v);
+            }
+        }
+        printf("\n");
+    }
 
     {
         Renderer::RenderData data{treeLevels, triangles, center};
