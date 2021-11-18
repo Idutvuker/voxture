@@ -14,7 +14,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 VOXELIZE_LEVEL = 2;
+    const u32 VOXELIZE_LEVEL = 5;
 
     struct Voxel {
         glm::ivec3 pos;
@@ -64,7 +64,7 @@ namespace Voxelizer {
 
         struct Node {
             static constexpr u32 WHITE = 0x00ffffff;
-            static constexpr u32 PARENT_BIT = 1<<31;
+            static constexpr u32 ADDR_BIT = 1 << 31;
 
             u32 vox[8];
         };
@@ -90,10 +90,13 @@ namespace Voxelizer {
 
                 Node node{};
 
+                auto it = level.set.find(t.voxel);
+                const bool curInSet = it != level.set.end();
+
                 for (size_t i = 0; i < VOX_OFFSET.size(); i++) {
                     Voxel newVoxel = { .pos = t.voxel.pos * 2 + VOX_OFFSET[i] };
 
-                    if (auto it = level.set.find(t.voxel); it != level.set.end()) {
+                    if (curInSet) {
                         if (t.depth == levels.size() - 2) {
                             glm::uvec3 colorVec = colors[newVoxel];
                             u32 color = (colorVec.r << 16) + (colorVec.g << 8) + (colorVec.b);
@@ -102,7 +105,7 @@ namespace Voxelizer {
                         } else {
                             q.push(Temp{t.depth + 1, newVoxel});
 
-                            u32 index = treeSize | Node::PARENT_BIT;
+                            u32 index = Node::ADDR_BIT | treeSize;
                             node.vox[i] = index;
                             treeSize++;
                         }
