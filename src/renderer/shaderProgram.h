@@ -70,7 +70,7 @@ private:
             GLchar infoLog[LOG_SIZE];
 
             glGetShaderInfoLog(shader, LOG_SIZE, nullptr, infoLog);
-            throw std::runtime_error(std::string("Shader compilation failed:\n") + infoLog);
+            throw std::runtime_error(std::string("Shader compilation failed " + filepath + '\n') + infoLog);
         }
 
         return shader;
