@@ -53,6 +53,20 @@ struct Renderer {
         glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * shared.mesh.size()));
     }
 
+    GLuint imageVAO, imageVBO;
+
+    struct ImageData {
+        glm::u8vec3 *image;
+        int width;
+        int height;
+
+        glm::u8vec3 get(uint x, uint y) {
+            x = x % width;
+            y = y % height;
+            return image[y * width + x];
+        };
+    } imageData;
+
     void initImage() {
         std::array<GLfloat, 6 * 3> tris = {
                 -1, 1, 0,
@@ -64,12 +78,12 @@ struct Renderer {
                 1, -1, 0,
         };
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+        glGenVertexArrays(1, &imageVAO);
+        glGenBuffers(1, &imageVBO);
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(imageVAO);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, imageVBO);
         glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(tris.size() * sizeof(GLfloat)), tris.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
@@ -87,31 +101,38 @@ struct Renderer {
 //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         std::string filepath = "resources/textures/test.jpg";
-        int imWidth, imHeight, imChannels;
-        uint8_t *data = stbi_load(filepath.c_str(), &imWidth, &imHeight, &imChannels, 0);
+        int imChannels;
+
+        uint8_t *data = stbi_load(filepath.c_str(), &imageData.width, &imageData.height, &imChannels, 0);
         if (!data)
             throw std::runtime_error("Failed to load image " + filepath);
 
 //        printf("%u %u %u", data[0], data[1], data[2]);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imWidth, imHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageData.width, imageData.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 //        glGenerateMipmap(GL_TEXTURE_2D);
-        stbi_image_free(data);
+
+        imageData.image = reinterpret_cast<glm::u8vec3 *>(data);
 
     }
 
     void drawImage() {
+        glBindVertexArray(imageVAO);
+
         res.imageSP.use();
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void draw() {
-        drawImage();
-//        if (modelMode)
-//            drawModel();
-//        else
-//            Cube::drawVoxels(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
+        if (imageMode)
+            drawImage();
+        else {
+            if (modelMode)
+                drawModel();
+            else
+                Cube::drawVoxels(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
+        }
     }
 
     float rotX = 0;
@@ -119,6 +140,7 @@ struct Renderer {
     float camRadius = 2.5;
     int treeLevel = 0;
     bool modelMode = false;
+    bool imageMode = false;
 
     void update(float delta) {
         using namespace glm;
@@ -130,6 +152,34 @@ struct Renderer {
                 glm::rotate(mat4(1), rotY, glm::vec3(1.0f, 0.0f, 0.0f)) *
                 glm::rotate(mat4(1), rotX, glm::vec3(0.0f, 1.0f, 0.0f)) *
                 viewBase;
+    }
+
+    void project() {
+        using namespace glm;
+
+        auto &lastLevel = shared.treeLevels.levels.back();
+        auto &colors = shared.treeLevels.colors;
+
+        for (const auto &voxel: lastLevel.set) {
+            vec3 P = vec3(voxel.pos) / float(lastLevel.getGridSize());
+            vec4 S = camera.projection * camera.view * vec4(P, 1.0);
+            S /= S.w;
+
+            vec2 texCoord = fract((vec2(S.x, -S.y) + 1.f) / 2.f);
+
+            uvec2 pixelCoord = texCoord * vec2(imageData.width, imageData.height) + 0.5f;
+
+//            u8vec3 color(texCoord * 255.f, 0);
+
+            colors[voxel] = imageData.get(pixelCoord.x, pixelCoord.y);;
+        }
+
+        shared.treeLevels.buildRaw();
+
+        auto &octree = shared.treeLevels.rawData;
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+                     GLsizeiptr(octree.size() * sizeof(Voxelizer::Octree::Node)),
+                     octree.data(), GL_DYNAMIC_DRAW);
     }
 
     void mainLoop() {
@@ -157,6 +207,10 @@ struct Renderer {
                 ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
 
                 ImGui::Checkbox("Draw Model", &modelMode);
+                ImGui::Checkbox("Draw Image", &imageMode);
+
+                if (ImGui::Button("Project"))
+                    project();
 
                 ImGui::End();
             }
@@ -193,19 +247,16 @@ struct Renderer {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER,
                      GLsizeiptr(octree.size() * sizeof(Voxelizer::Octree::Node)),
-                     octree.data(), GL_STATIC_DRAW);
+                     octree.data(), GL_DYNAMIC_DRAW);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
 
 
     void initRes() {
-//        initModel();
-//
-//        Cube::initCube();
+        initModel();
+        Cube::initCube();
 
         initImage();
     }
@@ -215,5 +266,9 @@ struct Renderer {
             camera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
     {
         initRes();
+    }
+
+    ~Renderer() {
+        stbi_image_free(imageData.image);
     }
 };

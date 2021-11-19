@@ -14,7 +14,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 VOXELIZE_LEVEL = 5;
+    const u32 VOXELIZE_LEVEL = 9;
 
     struct Voxel {
         glm::ivec3 pos;
@@ -30,6 +30,7 @@ namespace Voxelizer {
 
         u32 level;
 
+        // TODO: pos / getGridSize() = ????
         u32 getGridSize() const {
             return 1 << level;
         }
@@ -77,6 +78,8 @@ namespace Voxelizer {
         };
 
         void buildRaw() {
+            rawData.clear();
+
             std::queue<Temp> q;
 
             q.push(Temp{0, { .pos = {0, 0, 0} }});
