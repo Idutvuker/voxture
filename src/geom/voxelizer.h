@@ -14,7 +14,7 @@ namespace Voxelizer {
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    const u32 VOXELIZE_LEVEL = 9;
+    const u32 VOXELIZE_LEVEL = 7;
 
     struct Voxel {
         glm::ivec3 pos;

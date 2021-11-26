@@ -67,7 +67,30 @@ struct Renderer {
         };
     } imageData;
 
+    GLuint depthFBO;
+    GLuint depthTex;
+
+    void initDepthBuffer() {
+        glGenTextures(1, &depthTex);
+        glBindTexture(GL_TEXTURE_2D, depthTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, context.WINDOW_WIDTH, context.WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+
+        glGenFramebuffers(1, &depthFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
     void initImage() {
+        initDepthBuffer();
+
         std::array<GLfloat, 6 * 3> tris = {
                 -1, 1, 0,
                 -1, -1, 0,
@@ -91,13 +114,13 @@ struct Renderer {
 
         GLuint texture;
 
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//        glGenTextures(1, &texture);
+//        glBindTexture(GL_TEXTURE_2D, texture);
+//
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         std::string filepath = "resources/textures/test.jpg";
@@ -109,7 +132,7 @@ struct Renderer {
 
 //        printf("%u %u %u", data[0], data[1], data[2]);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageData.width, imageData.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageData.width, imageData.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 //        glGenerateMipmap(GL_TEXTURE_2D);
 
         imageData.image = reinterpret_cast<glm::u8vec3 *>(data);
@@ -154,8 +177,22 @@ struct Renderer {
                 viewBase;
     }
 
+
+    float linearizeDepthNDC(float depth) {
+        return (2 * camera.NEAR * camera.FAR) / (camera.FAR + camera.NEAR - depth * (camera.FAR - camera.NEAR));
+    }
+
     void project() {
         using namespace glm;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        drawModel();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        std::vector<float> depthImage(context.WINDOW_WIDTH * context.WINDOW_HEIGHT);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthImage.data());
 
         auto &lastLevel = shared.treeLevels.levels.back();
         auto &colors = shared.treeLevels.colors;
@@ -165,13 +202,20 @@ struct Renderer {
             vec4 S = camera.projection * camera.view * vec4(P, 1.0);
             S /= S.w;
 
-            vec2 texCoord = fract((vec2(S.x, -S.y) + 1.f) / 2.f);
+            vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
+            if (0 <= texCoord.x && texCoord.x < 1 && 0 <= texCoord.y && texCoord.y < 1) {
+                uvec2 pixelCoordImage = texCoord * vec2(imageData.width, imageData.height) + 0.5f;
+                uvec2 pixelCoordDepthMap = texCoord * vec2(context.WINDOW_WIDTH, context.WINDOW_HEIGHT) + 0.5f;
 
-            uvec2 pixelCoord = texCoord * vec2(imageData.width, imageData.height) + 0.5f;
+                float modelDepth = linearizeDepthNDC(
+                        depthImage[context.WINDOW_WIDTH * pixelCoordDepthMap.y + pixelCoordDepthMap.x] * 2 - 1);
+                float voxelDepth = linearizeDepthNDC(S.z);
 
-//            u8vec3 color(texCoord * 255.f, 0);
+                const float EPS = sqrtf(3) / float(lastLevel.getGridSize());
 
-            colors[voxel] = imageData.get(pixelCoord.x, pixelCoord.y);;
+                if (modelDepth + EPS > voxelDepth)
+                    colors[voxel] = imageData.get(pixelCoordImage.x, pixelCoordImage.y);
+            }
         }
 
         shared.treeLevels.buildRaw();
