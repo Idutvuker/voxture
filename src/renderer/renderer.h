@@ -13,7 +13,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
 
 struct Renderer {
     GLFWContext context;
@@ -55,18 +54,6 @@ struct Renderer {
 
     GLuint imageVAO, imageVBO;
 
-    struct ImageData {
-        glm::u8vec3 *image;
-        int width;
-        int height;
-
-        glm::u8vec3 get(uint x, uint y) {
-            x = x % width;
-            y = y % height;
-            return image[y * width + x];
-        };
-    } imageData;
-
     GLuint depthFBO;
     GLuint depthTex;
 
@@ -87,6 +74,8 @@ struct Renderer {
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+
+    Image<glm::u8vec3> photo{"resources/textures/test.jpg"};
 
     void initImage() {
         initDepthBuffer();
@@ -120,22 +109,11 @@ struct Renderer {
 //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 //
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        std::string filepath = "resources/textures/test.jpg";
-        int imChannels;
-
-        uint8_t *data = stbi_load(filepath.c_str(), &imageData.width, &imageData.height, &imChannels, 0);
-        if (!data)
-            throw std::runtime_error("Failed to load image " + filepath);
-
-//        printf("%u %u %u", data[0], data[1], data[2]);
-
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageData.width, imageData.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, photo.width, photo.height, 0, GL_RGB, GL_UNSIGNED_BYTE, photo.image.data());
 //        glGenerateMipmap(GL_TEXTURE_2D);
-
-        imageData.image = reinterpret_cast<glm::u8vec3 *>(data);
 
     }
 
@@ -182,6 +160,8 @@ struct Renderer {
         return (2 * camera.NEAR * camera.FAR) / (camera.FAR + camera.NEAR - depth * (camera.FAR - camera.NEAR));
     }
 
+    Image<float> depthMap{context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+
     void project() {
         using namespace glm;
 
@@ -191,8 +171,7 @@ struct Renderer {
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        std::vector<float> depthImage(context.WINDOW_WIDTH * context.WINDOW_HEIGHT);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthImage.data());
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthMap.image.data());
 
         auto &lastLevel = shared.treeLevels.levels.back();
         auto &colors = shared.treeLevels.colors;
@@ -204,17 +183,13 @@ struct Renderer {
 
             vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
             if (0 <= texCoord.x && texCoord.x < 1 && 0 <= texCoord.y && texCoord.y < 1) {
-                uvec2 pixelCoordImage = texCoord * vec2(imageData.width, imageData.height) + 0.5f;
-                uvec2 pixelCoordDepthMap = texCoord * vec2(context.WINDOW_WIDTH, context.WINDOW_HEIGHT) + 0.5f;
-
-                float modelDepth = linearizeDepthNDC(
-                        depthImage[context.WINDOW_WIDTH * pixelCoordDepthMap.y + pixelCoordDepthMap.x] * 2 - 1);
+                float modelDepth = linearizeDepthNDC(depthMap.getByTexCoord(texCoord) * 2 - 1);
                 float voxelDepth = linearizeDepthNDC(S.z);
 
-                const float EPS = sqrtf(3) / float(lastLevel.getGridSize());
+                const float EPS = 2 / float(lastLevel.getGridSize());
 
                 if (modelDepth + EPS > voxelDepth)
-                    colors[voxel] = imageData.get(pixelCoordImage.x, pixelCoordImage.y);
+                    colors[voxel] = photo.getByTexCoord({texCoord.x, -texCoord.y});
             }
         }
 
@@ -310,9 +285,5 @@ struct Renderer {
             camera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
     {
         initRes();
-    }
-
-    ~Renderer() {
-        stbi_image_free(imageData.image);
     }
 };

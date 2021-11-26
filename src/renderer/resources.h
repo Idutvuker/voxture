@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shaderProgram.h"
+#include "image.hpp"
 
 struct Resources {
     ShaderProgram voxelSP = ShaderProgram("resources/shaders/voxel.vert.glsl", "resources/shaders/voxel.frag.glsl");
