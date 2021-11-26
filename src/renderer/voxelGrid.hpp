@@ -13,8 +13,8 @@
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace Cube {
-    float vertices[] = {
+struct VoxelGrid {
+    static constexpr float vertices[] = {
             0, 0, 0,
             1, 0, 0,
             1, 0, 1,
@@ -26,7 +26,7 @@ namespace Cube {
             0, 1, 1
     };
 
-    GLuint indices[] = {
+    static constexpr GLuint indices[] = {
             0, 4, 1,
             1, 4, 5,
 
@@ -46,12 +46,11 @@ namespace Cube {
             0, 1, 2
     };
 
-    inline GLuint VAO;
-    inline GLuint VBO;
-    inline GLuint EBO;
+    GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
 
-    inline void initCube() {
-
+    VoxelGrid() {
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
@@ -68,7 +67,7 @@ namespace Cube {
         glEnableVertexAttribArray(0);
     }
 
-    void drawVoxels(const Camera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet, const Voxelizer::VoxelColors &colors) {
+    void draw(const Camera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet, const Voxelizer::VoxelColors &colors) {
         using namespace glm;
 
         glBindVertexArray(VAO);
@@ -100,4 +99,4 @@ namespace Cube {
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
         }
     }
-}
+};

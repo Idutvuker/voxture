@@ -1,7 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
-#include "cube.hpp"
+#include "voxelGrid.hpp"
 #include "../util/Status.hpp"
 #include "../util/Logger.hpp"
 #include "shaderProgram.h"
@@ -17,6 +17,7 @@
 struct Renderer {
     GLFWContext context;
     Resources res;
+    VoxelGrid voxelGrid;
 
     struct RenderData {
         Voxelizer::Octree &treeLevels;
@@ -132,27 +133,16 @@ struct Renderer {
             if (modelMode)
                 drawModel();
             else
-                Cube::drawVoxels(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
+                voxelGrid.draw(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
         }
     }
 
-    float rotX = 0;
-    float rotY = 0;
-    float camRadius = 2.5;
     int treeLevel = 0;
     bool modelMode = false;
     bool imageMode = false;
 
     void update(float delta) {
-        using namespace glm;
-
-        static mat4 viewBase = translate(mat4(1.0f), -shared.center);
-
-        camera.view =
-                translate(mat4(1), vec3(0, 0, -camRadius)) *
-                glm::rotate(mat4(1), rotY, glm::vec3(1.0f, 0.0f, 0.0f)) *
-                glm::rotate(mat4(1), rotX, glm::vec3(0.0f, 1.0f, 0.0f)) *
-                viewBase;
+        camera.update(delta);
     }
 
 
@@ -221,9 +211,9 @@ struct Renderer {
 
             {
                 ImGui::Begin("Hello");
-                ImGui::SliderFloat("rot X", &rotX, 0.0f, 2 * glm::pi<float>());
-                ImGui::SliderFloat("rot Y", &rotY, -glm::half_pi<float>(), glm::half_pi<float>());
-                ImGui::SliderFloat("cam Rad", &camRadius, 0.5, 4);
+                ImGui::SliderFloat("rot X", &camera.rotX, 0.0f, 2 * glm::pi<float>());
+                ImGui::SliderFloat("rot Y", &camera.rotY, -glm::half_pi<float>(), glm::half_pi<float>());
+                ImGui::SliderFloat("orbit Rad", &camera.orbitRadius, 0.5, 4);
 
                 ImGui::SliderInt("Tree level", &treeLevel, 0, int(shared.treeLevels.levels.size()) - 1);
                 ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
@@ -274,11 +264,14 @@ struct Renderer {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
     }
 
-
+    void initCamera() {
+        camera.orbitBase = translate(glm::mat4(1.0f), -shared.center);
+    }
 
     void initRes() {
+        initCamera();
+
         initModel();
-        Cube::initCube();
 
         initImage();
     }
