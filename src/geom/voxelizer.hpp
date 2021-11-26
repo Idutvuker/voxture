@@ -30,7 +30,6 @@ namespace Voxelizer {
 
         u32 level;
 
-        // TODO: pos / getGridSize() = ????
         u32 getGridSize() const {
             return 1 << level;
         }
@@ -154,7 +153,7 @@ namespace Voxelizer {
         const auto gridSize = float(voxelSet.getGridSize());
 
         for (const auto &v: voxelSet.set)
-            res[v] = u8vec3(vec3(v.pos) / gridSize * 255.f + 0.5f);
+            res[v] = u8vec3(vec3(v.pos) / (gridSize - 1) * 255.f);
 
         return res;
     }

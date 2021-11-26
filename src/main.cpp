@@ -91,71 +91,6 @@ Status writePLY_triangles(const std::vector<Triangle> &data) {
     return Status::error("Couldn't open file " + filename);
 }
 
-void testing(uint *Octree) {
-    const uint MAX_LEVEL = 2;
-    using namespace glm;
-    //vec4 pos = gl_FragCoord;
-    //float c = clamp(pow(pos.z, 30), 0, 1);
-//
-    uint globGridSize = 1 << MAX_LEVEL;
-    uvec3 globVox = uvec3(2, 2, 2);
-
-
-    const uint PARENT_BIT = 1 << 31;
-    const uint PTR_MASK = ~PARENT_BIT;
-
-    uint depth = 0;
-
-    uvec3 curVox = uvec3(0);
-    uint curPtr = PARENT_BIT;
-
-    uint offset = 0;
-
-    while (true) {
-//        uint gridSize = 1 << (depth + 1);
-//        uvec3 vox = uvec3(fPos * (gridSize - 1) + 0.5f);
-
-        uint q = MAX_LEVEL - depth - 1;
-        uvec3 vox = globVox >> q;
-
-        uvec3 diff = vox - curVox * uint(2);
-
-        if (diff.x > 1 || diff.y > 1 || diff.z > 1) {
-            assert(false);
-            return;
-        }
-
-        offset = (diff.x << 2) + (diff.y << 1) + (diff.z);
-
-        if ((curPtr & PARENT_BIT) == 0) {
-            break;
-        }
-        uint real_ptr = (curPtr & PTR_MASK);
-        curPtr = Octree[real_ptr * 8 + offset];
-
-        curVox = vox;
-
-        depth++;
-    }
-
-//    vec3 color = vec3(vox) / gridSize;
-    uint color = Octree[(curPtr & PTR_MASK) * 8 + offset];
-
-    const uint RED_MASK = 0xff0000;
-    const uint GREEN_MASK = 0x00ff00;
-    const uint BLUE_MASK = 0x0000ff;
-
-    uint r = color >> 16;
-    uint g = (color & GREEN_MASK) >> 8;
-    uint b = color & BLUE_MASK;
-
-    vec3 colorVec = vec3(r, g, b) / 255.f;
-//    vec3 colorVec = vec3(float(depth) / 2.f);
-//    vec3 color = vec3() / gridSize;
-
-    Log.info({"Color", color});
-}
-
 int main() {
     std::vector<Triangle> triangles;
 
@@ -163,8 +98,6 @@ int main() {
 
     auto minAxis = glm::vec3(std::numeric_limits<float>::infinity());
     auto maxAxis = glm::vec3(-std::numeric_limits<float>::infinity());
-
-    const float margin = 0;
 
     for (auto &t: triangles) {
         for (int i = 0; i < 3; i++) {
@@ -175,9 +108,6 @@ int main() {
         }
     }
 
-    minAxis -= margin;
-    maxAxis += margin;
-
     auto diff = maxAxis - minAxis;
 
     int scaleAxis = 0;
@@ -185,9 +115,14 @@ int main() {
         if (diff[i] > diff[scaleAxis])
             scaleAxis = i;
 
+    float scale = std::nextafter(1.f, 0.f);
+
     for (auto &t: triangles) {
         for (size_t i = 0; i < 3; i++) {
-            t[i] = (t[i] - minAxis) / (diff[scaleAxis]);
+            t[i] = scale * (t[i] - minAxis) / (diff[scaleAxis]);
+
+            for (int j = 0; j < 3; j++)
+                assert(0 <= t[i][j] && t[i][j] < 1 && "coordinates should be in [0, 1)");
         }
     }
 
@@ -197,23 +132,6 @@ int main() {
     auto colors = Voxelizer::colorize(voxelSet);
     auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
     treeLevels.buildRaw();
-
-//    using u32 = Voxelizer::u32;
-//    u32 PBIT = Voxelizer::Octree::Node::ADDR_BIT;
-//
-//    for (size_t i = 0; i < treeLevels.rawData.size(); i++) {
-//        printf("Node %u:\n", u32(i));
-//        for (u32 v: treeLevels.rawData[i].vox) {
-//            if (v & PBIT) {
-//                printf("\t adr %u\n", (v ^ PBIT));
-//            } else {
-//                printf("\t color %#08x\n", v);
-//            }
-//        }
-//        printf("\n");
-//    }
-
-//    testing(reinterpret_cast<uint*>(treeLevels.rawData.data()));
 
     {
         Renderer::RenderData data{treeLevels, triangles, center};

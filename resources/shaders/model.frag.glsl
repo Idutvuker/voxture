@@ -13,7 +13,7 @@ layout(std430, binding = 0) buffer Voxels {
 
 void main() {
     const uint gridSize = 1 << MAX_LEVEL;
-    const uvec3 globalVox = uvec3(fPos * gridSize); // TODO: FIX
+    const uvec3 globalVox = uvec3(fPos * gridSize);
 
     const uint ADDR_BIT = 1 << 31;
     const uint PTR_MASK = ~ADDR_BIT;
