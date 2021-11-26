@@ -1,15 +1,15 @@
 #pragma once
 
-#include "camera.h"
-#include "cube.h"
-#include "../util/Status.h"
-#include "../util/Logger.h"
+#include "camera.hpp"
+#include "cube.hpp"
+#include "../util/Status.hpp"
+#include "../util/Logger.hpp"
 #include "shaderProgram.h"
-#include "mygl.h"
-#include "../geom/triangle.h"
-#include "glfwContext.h"
-#include "../geom/voxelizer.h"
-#include "resources.h"
+#include "mygl.hpp"
+#include "../geom/triangle.hpp"
+#include "glfwContext.hpp"
+#include "../geom/voxelizer.hpp"
+#include "resources.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -162,16 +162,19 @@ struct Renderer {
 
     Image<float> depthMap{context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
 
-    void project() {
-        using namespace glm;
-
+    void updateDepthMap() {
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         drawModel();
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthMap.image.data());
+    }
+
+    void project() {
+        using namespace glm;
+
+        updateDepthMap();
 
         auto &lastLevel = shared.treeLevels.levels.back();
         auto &colors = shared.treeLevels.colors;

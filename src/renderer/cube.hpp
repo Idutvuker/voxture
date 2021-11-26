@@ -1,13 +1,13 @@
 #pragma once
 
-#include "mygl.h"
-#include "../geom/triangle.h"
-#include "camera.h"
+#include "mygl.hpp"
+#include "../geom/triangle.hpp"
+#include "camera.hpp"
 #include "shaderProgram.h"
-#include "renderer.h"
-#include "../geom/voxelizer.h"
-#include "../util/Logger.h"
-#include "resources.h"
+#include "renderer.hpp"
+#include "../geom/voxelizer.hpp"
+#include "../util/Logger.hpp"
+#include "resources.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>

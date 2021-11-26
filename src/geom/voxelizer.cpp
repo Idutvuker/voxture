@@ -1,5 +1,5 @@
-#include "voxelizer.h"
-#include "../util/Logger.h"
+#include "voxelizer.hpp"
+#include "../util/Logger.hpp"
 
 #include <glm/geometric.hpp>
 #include <glm/gtx/string_cast.hpp>

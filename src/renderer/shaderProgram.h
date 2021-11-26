@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mygl.h"
+#include "mygl.hpp"
 
 #include <string>
 #include <stdexcept>

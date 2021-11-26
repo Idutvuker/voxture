@@ -1,8 +1,8 @@
-#include "renderer/renderer.h"
-#include "util/Status.h"
-#include "geom/triangle.h"
-#include "geom/voxelizer.h"
-#include "util/Logger.h"
+#include "renderer/renderer.hpp"
+#include "util/Status.hpp"
+#include "geom/triangle.hpp"
+#include "geom/voxelizer.hpp"
+#include "util/Logger.hpp"
 
 #include <iostream>
 #include <fstream>

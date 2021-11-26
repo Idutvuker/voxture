@@ -4,7 +4,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "mygl.h"
+#include "mygl.hpp"
 
 struct GLFWContext {
     const int WINDOW_WIDTH = 800;

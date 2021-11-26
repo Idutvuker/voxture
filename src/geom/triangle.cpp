@@ -1,4 +1,4 @@
-#include "triangle.h"
+#include "triangle.hpp"
 
 glm::vec3 &Triangle::operator[](size_t index) {
     if (index == 0)
