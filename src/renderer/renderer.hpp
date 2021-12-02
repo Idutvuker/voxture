@@ -179,7 +179,7 @@ struct Renderer {
                 float modelDepth = linearizeDepthNDC(depthMap.getByTexCoord(texCoord) * 2 - 1);
                 float voxelDepth = linearizeDepthNDC(S.z);
 
-                const float EPS = 2 / float(lastLevel.getGridSize());
+                const float EPS = 4 / float(lastLevel.getGridSize());
 
                 if (modelDepth + EPS > voxelDepth)
                     colors[voxel] = photo.getByTexCoord({texCoord.x, -texCoord.y});

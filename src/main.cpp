@@ -115,7 +115,8 @@ int main() {
         if (diff[i] > diff[scaleAxis])
             scaleAxis = i;
 
-    float scale = std::nextafter(1.f, 0.f);
+    int resolution = 1 << Voxelizer::VOXELIZE_LEVEL;
+    float scale = std::nextafter(float(resolution - 1) / float(resolution), 0.f);
 
     for (auto &t: triangles) {
         for (size_t i = 0; i < 3; i++) {
@@ -129,8 +130,8 @@ int main() {
     glm::vec3 center = (maxAxis - minAxis) / 2.f / diff[scaleAxis];
 
     Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(triangles);
-    auto colors = Voxelizer::colorize(voxelSet);
-    auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
+//    auto colors = Voxelizer::colorize(voxelSet);
+    auto treeLevels = Voxelizer::buildLevels(voxelSet, {});
     treeLevels.buildRaw();
 
     {

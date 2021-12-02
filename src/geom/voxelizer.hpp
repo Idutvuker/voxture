@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <cstdint>
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 #include <queue>
 
 namespace Voxelizer {
@@ -35,7 +35,11 @@ namespace Voxelizer {
         }
 
         void insert(const Voxel &voxel) {
-            set.insert(voxel);
+            const glm::ivec3 bounds = glm::ivec3(int(getGridSize()));
+
+            if (all(glm::lessThan(voxel.pos, bounds))) {
+                set.insert(voxel);
+            }
         }
 
         VoxelSet() : level(0) {}

@@ -69,13 +69,25 @@ namespace Voxelizer {
         }
     }
 
+    VoxelSet extendGrid(const VoxelSet &original) {
+        VoxelSet extended(original.level);
+
+        for (const Voxel &vox: original.set) {
+            for (auto offset: Octree::VOX_OFFSET) {
+                extended.insert(Voxel{.pos = {vox.pos + offset}});
+            }
+        }
+
+        return extended;
+    }
+
     VoxelSet voxelize(const std::vector<Triangle> &triangles) {
         VoxelSet voxelSet(VOXELIZE_LEVEL);
 
         for (const auto &tri: triangles)
             voxelizeTriangle(tri, voxelSet);
 
-        return voxelSet;
+        return extendGrid(voxelSet);
     }
 
     bool Voxel::operator==(const Voxel &other) const {
