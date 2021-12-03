@@ -3,6 +3,7 @@
 #include "geom/triangle.hpp"
 #include "geom/voxelizer.hpp"
 #include "util/saharov.hpp"
+#include "geom/normalizer.hpp"
 
 #include <iostream>
 
@@ -43,24 +44,21 @@ Status writePLY_triangles(const std::vector<Triangle> &data) {
     return Status::error("Couldn't open file " + filename);
 }
 
-#include "geom/normalizer.hpp"
-
 int main() {
-    std::vector<Triangle> triangles;
+    SaharovLoader saharov;
+    saharov.load();
 
-    getTriangles("resources/saharov/saharov.obj", triangles).assertOK();
-
-    glm::vec3 center = Normalizer::normalize(triangles);
+    Normalizer norm(saharov.triangles);
 
 
-    Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(triangles);
+    Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(saharov.triangles);
     auto colors = Voxelizer::colorize(voxelSet);
     auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
     treeLevels.buildRaw();
 
 
     {
-        Renderer::RenderData data{treeLevels, triangles, center};
+        Renderer::RenderData data{treeLevels, saharov.triangles, norm.center};
         Renderer r(data);
         r.mainLoop();
     }
