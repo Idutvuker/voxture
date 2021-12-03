@@ -1,10 +1,10 @@
 #pragma once
 
-#include "camera.hpp"
+#include "renderCamera.hpp"
 #include "voxelGrid.hpp"
 #include "../util/Status.hpp"
 #include "../util/Logger.hpp"
-#include "shaderProgram.h"
+#include "shaderProgram.hpp"
 #include "mygl.hpp"
 #include "../geom/triangle.hpp"
 #include "glfwContext.hpp"
@@ -28,7 +28,7 @@ struct Renderer {
     GLuint VAO = 0;
     GLuint VBO = 0;
 
-    Camera camera;
+    RenderCamera camera;
 
     static void processInput(GLFWwindow *window) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -127,6 +127,8 @@ struct Renderer {
     }
 
     void draw() {
+        drawDebug();
+
         if (imageMode)
             drawImage();
         else {
@@ -213,7 +215,7 @@ struct Renderer {
                 ImGui::Begin("Hello");
                 ImGui::SliderFloat("rot X", &camera.rotX, 0.0f, 2 * glm::pi<float>());
                 ImGui::SliderFloat("rot Y", &camera.rotY, -glm::half_pi<float>(), glm::half_pi<float>());
-                ImGui::SliderFloat("orbit Rad", &camera.orbitRadius, 0.5, 4);
+                ImGui::SliderFloat("orbit Rad", &camera.orbitRadius, 0.5, 20);
 
                 ImGui::SliderInt("Tree level", &treeLevel, 0, int(shared.treeLevels.levels.size()) - 1);
                 ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
@@ -268,12 +270,69 @@ struct Renderer {
         camera.orbitBase = translate(glm::mat4(1.0f), -shared.center);
     }
 
+    GLuint debugVAO;
+
+    void initDebug() {
+        constexpr float vertices[] = {
+                0, 0, 0,
+                -0.5, -0.5, -1,
+                0.5, -0.5, -1,
+                0.5, 0.5, -1,
+                -0.5, 0.5, -1,
+        };
+
+        constexpr GLuint indices[] = {
+                1, 2, 0,
+                2, 3, 0,
+                3, 4, 0,
+                4, 1, 0,
+
+                1, 3, 2,
+                1, 4, 3
+        };
+
+        GLuint debugVBO;
+        GLuint debugEBO;
+
+        glGenVertexArrays(1, &debugVAO);
+        glGenBuffers(1, &debugVBO);
+        glGenBuffers(1, &debugEBO);
+
+        glBindVertexArray(debugVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debugEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+        glEnableVertexAttribArray(0);
+    }
+
+    void drawDebug() {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+
+        res.testSP.use();
+        glBindVertexArray(debugVAO);
+
+        GLint MVPLoc = glGetUniformLocation(res.testSP.programID, "uModelViewProjMat");
+        glm::mat4 MVPMat = camera.projection * camera.view;
+        glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
+
+        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
+
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    }
+
     void initRes() {
         initCamera();
 
         initModel();
 
         initImage();
+
+        initDebug();
     }
 
     explicit Renderer(RenderData _renderData) :

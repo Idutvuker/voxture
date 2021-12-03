@@ -7,7 +7,7 @@ include_directories(external "external/glad/include")
 find_package(glfw3 REQUIRED)
 add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c")
 
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
+file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.hpp")
 set(TARGET_NAME voxture)
 add_executable(${TARGET_NAME} ${SRC_FILES})
 

@@ -2,8 +2,8 @@
 
 #include "mygl.hpp"
 #include "../geom/triangle.hpp"
-#include "camera.hpp"
-#include "shaderProgram.h"
+#include "renderCamera.hpp"
+#include "shaderProgram.hpp"
 #include "renderer.hpp"
 #include "../geom/voxelizer.hpp"
 #include "../util/Logger.hpp"
@@ -67,7 +67,7 @@ struct VoxelGrid {
         glEnableVertexAttribArray(0);
     }
 
-    void draw(const Camera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet, const Voxelizer::VoxelColors &colors) {
+    void draw(const RenderCamera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet, const Voxelizer::VoxelColors &colors) {
         using namespace glm;
 
         glBindVertexArray(VAO);
