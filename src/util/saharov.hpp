@@ -25,7 +25,7 @@ struct SaharovLoader {
         size_t nCameras, nPoints;
         filestream >> nCameras >> nPoints;
 
-        for (size_t c = 0; c < nCameras / 2; c++) {
+        for (size_t c = 0; c < nCameras; c++) {
             double f, k1, k2;
             filestream >> f >> k1 >> k2;
 
@@ -40,22 +40,12 @@ struct SaharovLoader {
             orientation[1] = orientation[2];
             orientation[2] = -temp;
 
-
-            Log.info({orientation[0], orientation[1], orientation[2]});
-
             glm::vec3 pos;
             for (int i = 0; i < 3; i++) {
                 filestream >> pos[i];
             }
 
-            std::swap(pos[1], pos[2]);
-            pos[2] = -pos[2];
-
-            Log.info({"pos", pos});
-
-            glm::mat4 result = translate(mat4(orientation), vec3(0, -14, 0));
-
-            Log.info({result[0], result[1], result[2], result[3]});
+            glm::mat4 result = translate(mat4(1), pos) * mat4(orientation);
 
             cameras.push_back(Camera{result});
         }
