@@ -13,20 +13,20 @@ int main() {
     SaharovLoader saharov;
     saharov.load();
 
-    Normalizer norm(saharov.triangles);
+    //Normalizer norm(saharov.triangles);
 
 
-    Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(saharov.triangles);
-    auto colors = Voxelizer::colorize(voxelSet);
-    auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
-    treeLevels.buildRaw();
+//    Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(saharov.triangles);
+//    auto colors = Voxelizer::colorize(voxelSet);
+//    auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
+//    treeLevels.buildRaw();
 
-
-//    {
-//        Renderer::RenderData data{treeLevels, saharov.triangles, norm.center};
-//        Renderer r(data);
-//        r.mainLoop();
-//    }
+    auto octree = Voxelizer::Octree({}, {});
+    {
+        Renderer::RenderData data{octree, saharov.triangles, glm::vec3(0), saharov.cameras.back().transform};
+        Renderer r(data);
+        r.mainLoop();
+    }
 
     return 0;
 }

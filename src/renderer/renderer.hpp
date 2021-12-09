@@ -10,6 +10,7 @@
 #include "glfwContext.hpp"
 #include "../geom/voxelizer.hpp"
 #include "resources.hpp"
+#include "../common/constants.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -23,6 +24,7 @@ struct Renderer {
         Voxelizer::Octree &treeLevels;
         std::vector<Triangle> &mesh;
         glm::vec3 center;
+        glm::mat4 cameraTransform;
     } shared;
 
     GLuint VAO = 0;
@@ -39,18 +41,19 @@ struct Renderer {
 
     void drawModel() const {
         using namespace glm;
-        res.modelSP.use();
+        res.testSP.use();
 
         mat4 MVPMat = camera.projection * camera.view;
 
         GLint MVPLoc = glGetUniformLocation(res.modelSP.programID, "uModelViewProjMat");
-        GLint LevelLoc = glGetUniformLocation(res.modelSP.programID, "uLevel");
 
         glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, glm::value_ptr(MVPMat));
-        glUniform1ui(LevelLoc, treeLevel);
 
         glBindVertexArray(VAO);
+
+        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
         glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * shared.mesh.size()));
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
     }
 
     GLuint imageVAO, imageVBO;
@@ -134,13 +137,13 @@ struct Renderer {
         else {
             if (modelMode)
                 drawModel();
-            else
-                voxelGrid.draw(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
+//            else
+//                voxelGrid.draw(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
         }
     }
 
     int treeLevel = 0;
-    bool modelMode = false;
+    bool modelMode = true;
     bool imageMode = false;
 
     void update(float delta) {
@@ -217,8 +220,10 @@ struct Renderer {
                 ImGui::SliderFloat("rot Y", &camera.rotY, -glm::half_pi<float>(), glm::half_pi<float>());
                 ImGui::SliderFloat("orbit Rad", &camera.orbitRadius, 0.5, 20);
 
+                ImGui::SliderFloat("FOV", &camera.FOV, 10, 150);
+
                 ImGui::SliderInt("Tree level", &treeLevel, 0, int(shared.treeLevels.levels.size()) - 1);
-                ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
+//                ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
 
                 ImGui::Checkbox("Draw Model", &modelMode);
                 ImGui::Checkbox("Draw Image", &imageMode);
@@ -267,7 +272,10 @@ struct Renderer {
     }
 
     void initCamera() {
-        camera.orbitBase = translate(glm::mat4(1.0f), -shared.center);
+        if (ABAC) {
+            camera.view = shared.cameraTransform;
+        }
+//        camera.orbitBase = translate(glm::mat4(1.0f), -shared.center);
     }
 
     GLuint debugVAO;
@@ -275,10 +283,10 @@ struct Renderer {
     void initDebug() {
         constexpr float vertices[] = {
                 0, 0, 0,
-                -0.5, -0.5, -1,
-                0.5, -0.5, -1,
-                0.5, 0.5, -1,
-                -0.5, 0.5, -1,
+                -0.5, -0.3, -1,
+                0.5, -0.3, -1,
+                0.5, 0.3, -1,
+                -0.5, 0.3, -1,
         };
 
         constexpr GLuint indices[] = {
@@ -317,7 +325,7 @@ struct Renderer {
         glBindVertexArray(debugVAO);
 
         GLint MVPLoc = glGetUniformLocation(res.testSP.programID, "uModelViewProjMat");
-        glm::mat4 MVPMat = camera.projection * camera.view;
+        glm::mat4 MVPMat = camera.projection * camera.view * glm::inverse(shared.cameraTransform);
         glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
 
         glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);

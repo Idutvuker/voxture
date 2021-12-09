@@ -3,9 +3,12 @@
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include "../common/constants.hpp"
 
 struct RenderCamera {
-    const float FOV = 45;
+    const float aspectRatio;
+    float FOV = 90;
+
     const float NEAR = 0.1f;
     const float FAR = 100.0f;
 
@@ -13,7 +16,9 @@ struct RenderCamera {
     glm::mat4 view;
 
     explicit RenderCamera(float aspectRatio) :
+        aspectRatio(aspectRatio),
         projection(glm::perspective(glm::radians(FOV), aspectRatio, NEAR, FAR)),
+//        projection(glm::ortho(-5.0f, 5.f, -5.f, 5.f, NEAR, FAR)),
         view(glm::mat4(1))
     {}
 
@@ -25,9 +30,13 @@ struct RenderCamera {
     void update(float delta) {
         using namespace glm;
 
-        view = translate(mat4(1), vec3(0, 0, -orbitRadius)) *
-               glm::rotate(mat4(1), rotY, glm::vec3(1.0f, 0.0f, 0.0f)) *
-               glm::rotate(mat4(1), rotX, glm::vec3(0.0f, 1.0f, 0.0f)) *
-               orbitBase;
+        projection = glm::perspective(glm::radians(FOV), aspectRatio, NEAR, FAR);
+
+        if (!ABAC) {
+            view = translate(mat4(1), vec3(0, 0, -orbitRadius)) *
+                   glm::rotate(mat4(1), rotY, glm::vec3(1.0f, 0.0f, 0.0f)) *
+                   glm::rotate(mat4(1), rotX, glm::vec3(0.0f, 1.0f, 0.0f)) *
+                   orbitBase;
+        }
     }
 };

@@ -32,3 +32,7 @@ endif()
 set(build_resources ${CMAKE_BINARY_DIR}/resources)
 set(src_resources ${CMAKE_SOURCE_DIR}/resources)
 add_custom_target(link_res COMMAND ${CMAKE_COMMAND} -E create_symlink ${src_resources} ${build_resources})
+
+
+add_executable(mytest src/test/test.cpp)
+
