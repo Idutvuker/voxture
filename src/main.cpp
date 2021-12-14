@@ -1,16 +1,11 @@
 #include "renderer/renderer.hpp"
-#include "util/Status.hpp"
-#include "geom/triangle.hpp"
 #include "geom/voxelizer.hpp"
-#include "util/saharov.hpp"
-#include "geom/normalizer.hpp"
-
-#include <iostream>
+#include "bundle/Bundle.hpp"
 
 #include <glm/vec3.hpp>
 
 int main() {
-    SaharovLoader saharov;
+    Bundle saharov;
     saharov.load();
 
     //Normalizer norm(saharov.triangles);
@@ -23,7 +18,7 @@ int main() {
 
     auto octree = Voxelizer::Octree({}, {});
     {
-        Renderer::RenderData data{octree, saharov.triangles, glm::vec3(0), saharov.cameras.back().transform};
+        Renderer::RenderData data{saharov, octree, glm::vec3(0)};
         Renderer r(data);
         r.mainLoop();
     }

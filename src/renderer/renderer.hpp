@@ -11,9 +11,11 @@
 #include "../geom/voxelizer.hpp"
 #include "resources.hpp"
 #include "../common/constants.hpp"
+#include "../bundle/Bundle.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <memory>
 
 struct Renderer {
     GLFWContext context;
@@ -21,10 +23,10 @@ struct Renderer {
     VoxelGrid voxelGrid;
 
     struct RenderData {
+        Bundle &bundle;
         Voxelizer::Octree &treeLevels;
-        std::vector<Triangle> &mesh;
+
         glm::vec3 center;
-        glm::mat4 cameraTransform;
     } shared;
 
     GLuint VAO = 0;
@@ -52,7 +54,7 @@ struct Renderer {
         glBindVertexArray(VAO);
 
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * shared.mesh.size()));
+        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * shared.bundle.mesh.size()));
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
     }
 
@@ -107,14 +109,14 @@ struct Renderer {
 
         GLuint texture;
 
-//        glGenTextures(1, &texture);
-//        glBindTexture(GL_TEXTURE_2D, texture);
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
 //
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 //
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 //
 //        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, photo.width, photo.height, 0, GL_RGB, GL_UNSIGNED_BYTE, photo.image.data());
 //        glGenerateMipmap(GL_TEXTURE_2D);
@@ -130,8 +132,6 @@ struct Renderer {
     }
 
     void draw() {
-        drawDebug();
-
         if (imageMode)
             drawImage();
         else {
@@ -146,8 +146,21 @@ struct Renderer {
     bool modelMode = true;
     bool imageMode = false;
 
+    bool staticCameraMode = true;
+    int staticCameraID = 0;
+
     void update(float delta) {
-        camera.update(delta);
+        if (staticCameraMode) {
+            Camera &staticCam = shared.bundle.cameras[staticCameraID];
+            auto photoHeight = float(staticCam.photo->height);
+            auto aspectRatio = float(staticCam.photo->width) / photoHeight;
+            float fovY = atan2f(photoHeight / 2, staticCam.focalLength) * 2;
+
+            camera.projection = glm::perspective(fovY, aspectRatio, camera.NEAR, camera.FAR);
+            camera.view = staticCam.transform;
+        } else {
+            camera.update(delta);
+        }
     }
 
 
@@ -228,6 +241,10 @@ struct Renderer {
                 ImGui::Checkbox("Draw Model", &modelMode);
                 ImGui::Checkbox("Draw Image", &imageMode);
 
+                ImGui::Checkbox("Static Camera", &staticCameraMode);
+                if (ImGui::SliderInt("Camera ID: ", &staticCameraID, 0, int(shared.bundle.cameras.size() - 1)))
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shared.bundle.cameras[staticCameraID].photo->width, shared.bundle.cameras[staticCameraID].photo->height, 0, GL_RGB, GL_UNSIGNED_BYTE, shared.bundle.cameras[staticCameraID].photo->image.data());
+
                 if (ImGui::Button("Project"))
                     project();
 
@@ -255,7 +272,7 @@ struct Renderer {
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(shared.mesh.size() * sizeof(Triangle)), shared.mesh.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(shared.bundle.mesh.size() * sizeof(Triangle)), shared.bundle.mesh.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
@@ -271,76 +288,10 @@ struct Renderer {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
     }
 
-    void initCamera() {
-        if (ABAC) {
-            camera.view = shared.cameraTransform;
-        }
-//        camera.orbitBase = translate(glm::mat4(1.0f), -shared.center);
-    }
-
-    GLuint debugVAO;
-
-    void initDebug() {
-        constexpr float vertices[] = {
-                0, 0, 0,
-                -0.5, -0.3, -1,
-                0.5, -0.3, -1,
-                0.5, 0.3, -1,
-                -0.5, 0.3, -1,
-        };
-
-        constexpr GLuint indices[] = {
-                1, 2, 0,
-                2, 3, 0,
-                3, 4, 0,
-                4, 1, 0,
-
-                1, 3, 2,
-                1, 4, 3
-        };
-
-        GLuint debugVBO;
-        GLuint debugEBO;
-
-        glGenVertexArrays(1, &debugVAO);
-        glGenBuffers(1, &debugVBO);
-        glGenBuffers(1, &debugEBO);
-
-        glBindVertexArray(debugVAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debugEBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-        glEnableVertexAttribArray(0);
-    }
-
-    void drawDebug() {
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-
-        res.testSP.use();
-        glBindVertexArray(debugVAO);
-
-        GLint MVPLoc = glGetUniformLocation(res.testSP.programID, "uModelViewProjMat");
-        glm::mat4 MVPMat = camera.projection * camera.view * glm::inverse(shared.cameraTransform);
-        glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
-
-        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, nullptr);
-
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-    }
-
     void initRes() {
-        initCamera();
-
         initModel();
 
         initImage();
-
-        initDebug();
     }
 
     explicit Renderer(RenderData _renderData) :

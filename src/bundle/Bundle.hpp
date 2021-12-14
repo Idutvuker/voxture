@@ -1,13 +1,13 @@
 #pragma once
 
 #include "../geom/triangle.hpp"
-#include "../geom/camera.hpp"
+#include "camera.hpp"
 
 #include <fstream>
-#include <glm/gtx/euler_angles.hpp>
+#include <filesystem>
 
-struct SaharovLoader {
-    std::vector<Triangle> triangles;
+struct Bundle {
+    std::vector<Triangle> mesh;
     std::vector<Camera> cameras;
 
     void loadCameras() {
@@ -26,8 +26,8 @@ struct SaharovLoader {
         filestream >> nCameras >> nPoints;
 
         for (size_t c = 0; c < nCameras; c++) {
-            double f, k1, k2;
-            filestream >> f >> k1 >> k2;
+            double focalLength, k1, k2;
+            filestream >> focalLength >> k1 >> k2;
 
             glm::mat3 orientation;
             for (int i = 0; i < 3; i++) {
@@ -47,13 +47,31 @@ struct SaharovLoader {
 
             glm::mat4 result = translate(mat4(1), pos) * mat4(orientation);
 
-            cameras.push_back(Camera{result});
+            Camera cam;
+            cam.transform = result;
+            cam.focalLength = float(focalLength);
+
+            cameras.push_back(cam);
+        }
+    }
+
+    void loadImages() {
+        std::string listFilepath = "resources/saharov/list.txt";
+        std::filesystem::path imgDir= "resources/saharov/imgs";
+
+        std::ifstream filestream(listFilepath);
+
+        for (Camera &camera: cameras) {
+            std::string imgName;
+            filestream >> imgName;
+
+            camera.photo.emplace(imgDir / imgName);
         }
     }
 
     void load() {
-        getTriangles("resources/saharov/saharov.obj", triangles).assertOK();
-//        getTriangles("resources/models/directions.obj", triangles).assertOK();
+        getTriangles("resources/saharov/saharov.obj", mesh).assertOK();
         loadCameras();
+        loadImages();
     }
 };
