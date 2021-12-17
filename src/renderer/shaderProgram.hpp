@@ -10,7 +10,11 @@
 struct ShaderProgram {
     GLuint programID = 0;
 
-    ShaderProgram(const std::string &vertexShaderFilepath, const std::string &fragmentShaderFilepath) {
+    ShaderProgram(
+            const std::string &vertexShaderFilepath,
+            const std::string &fragmentShaderFilepath,
+            [[maybe_unused]] const std::vector<std::string> &defines = {}
+    ) {
         auto vs = createShader(GL_VERTEX_SHADER, vertexShaderFilepath);
         auto fs = createShader(GL_FRAGMENT_SHADER, fragmentShaderFilepath);
 

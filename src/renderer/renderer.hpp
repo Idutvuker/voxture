@@ -12,6 +12,8 @@
 #include "resources.hpp"
 #include "../common/constants.hpp"
 #include "../bundle/Bundle.hpp"
+#include "Texture.hpp"
+#include "OrbitCameraController.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -22,17 +24,15 @@ struct Renderer {
     Resources res;
     VoxelGrid voxelGrid;
 
-    struct RenderData {
-        Bundle &bundle;
-        Voxelizer::Octree &treeLevels;
 
-        glm::vec3 center;
-    } shared;
+    Bundle &bundle;
+    Voxelizer::Octree &octree;
 
     GLuint VAO = 0;
     GLuint VBO = 0;
 
     RenderCamera camera;
+    OrbitCameraController cameraController {camera, context};
 
     static void processInput(GLFWwindow *window) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -43,7 +43,7 @@ struct Renderer {
 
     void drawModel() const {
         using namespace glm;
-        res.testSP.use();
+        res.modelSP.use();
 
         mat4 MVPMat = camera.projection * camera.view;
 
@@ -53,9 +53,9 @@ struct Renderer {
 
         glBindVertexArray(VAO);
 
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * shared.bundle.mesh.size()));
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
+//        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * bundle.mesh.size()));
+//        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL);
     }
 
     GLuint imageVAO, imageVBO;
@@ -67,6 +67,7 @@ struct Renderer {
         glGenTextures(1, &depthTex);
         glBindTexture(GL_TEXTURE_2D, depthTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, context.WINDOW_WIDTH, context.WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -80,8 +81,6 @@ struct Renderer {
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-
-    Image<glm::u8vec3> photo{"resources/textures/test.jpg"};
 
     void initImage() {
         initDepthBuffer();
@@ -107,16 +106,15 @@ struct Renderer {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
 
-        GLuint texture;
-
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+//        GLuint texture;
 //
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//        glGenTextures(1, &texture);
+//        glBindTexture(GL_TEXTURE_2D, texture);
 //
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 //
 //        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, photo.width, photo.height, 0, GL_RGB, GL_UNSIGNED_BYTE, photo.image.data());
 //        glGenerateMipmap(GL_TEXTURE_2D);
@@ -137,8 +135,8 @@ struct Renderer {
         else {
             if (modelMode)
                 drawModel();
-//            else
-//                voxelGrid.draw(camera, res, shared.treeLevels.levels[treeLevel], shared.treeLevels.colors);
+            else
+                voxelGrid.draw(camera, res, octree.levels[treeLevel], octree.colors);
         }
     }
 
@@ -151,14 +149,15 @@ struct Renderer {
 
     void update(float delta) {
         if (staticCameraMode) {
-            Camera &staticCam = shared.bundle.cameras[staticCameraID];
-            auto photoHeight = float(staticCam.photo->height);
-            auto aspectRatio = float(staticCam.photo->width) / photoHeight;
+            Camera &staticCam = bundle.cameras[staticCameraID];
+            auto photoHeight = 2912.f;//float(staticCam.photo->height);
+            auto aspectRatio = 4368.f / photoHeight;// float(staticCam.photo->width) / photoHeight;
             float fovY = atan2f(photoHeight / 2, staticCam.focalLength) * 2;
 
             camera.projection = glm::perspective(fovY, aspectRatio, camera.NEAR, camera.FAR);
             camera.view = staticCam.transform;
         } else {
+            cameraController.update(delta);
             camera.update(delta);
         }
     }
@@ -184,11 +183,11 @@ struct Renderer {
 
         updateDepthMap();
 
-        auto &lastLevel = shared.treeLevels.levels.back();
-        auto &colors = shared.treeLevels.colors;
+        auto &lastLevel = octree.levels.back();
+        auto &colors = octree.colors;
 
         for (const auto &voxel: lastLevel.set) {
-            vec3 P = vec3(voxel.pos) / float(lastLevel.getGridSize());
+            vec3 P = (vec3(voxel.pos) + vec3(0.5)) / float(lastLevel.getGridSize());
             vec4 S = camera.projection * camera.view * vec4(P, 1.0);
             S /= S.w;
 
@@ -197,19 +196,19 @@ struct Renderer {
                 float modelDepth = linearizeDepthNDC(depthMap.getByTexCoord(texCoord) * 2 - 1);
                 float voxelDepth = linearizeDepthNDC(S.z);
 
-                const float EPS = 4 / float(lastLevel.getGridSize());
+                const float EPS = 12.f / float(lastLevel.getGridSize());
 
                 if (modelDepth + EPS > voxelDepth)
-                    colors[voxel] = photo.getByTexCoord({texCoord.x, -texCoord.y});
+                    colors[voxel] = bundle.cameras[0].photo->getByTexCoord({texCoord.x, -texCoord.y});
             }
         }
 
-        shared.treeLevels.buildRaw();
+        octree.buildRaw();
 
-        auto &octree = shared.treeLevels.rawData;
+        auto &rawOctree = octree.rawData;
         glBufferData(GL_SHADER_STORAGE_BUFFER,
-                     GLsizeiptr(octree.size() * sizeof(Voxelizer::Octree::Node)),
-                     octree.data(), GL_DYNAMIC_DRAW);
+                     GLsizeiptr(rawOctree.size() * sizeof(Voxelizer::Octree::Node)),
+                     rawOctree.data(), GL_DYNAMIC_DRAW);
     }
 
     void mainLoop() {
@@ -229,21 +228,19 @@ struct Renderer {
 
             {
                 ImGui::Begin("Hello");
-                ImGui::SliderFloat("rot X", &camera.rotX, 0.0f, 2 * glm::pi<float>());
-                ImGui::SliderFloat("rot Y", &camera.rotY, -glm::half_pi<float>(), glm::half_pi<float>());
-                ImGui::SliderFloat("orbit Rad", &camera.orbitRadius, 0.5, 20);
+                ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
                 ImGui::SliderFloat("FOV", &camera.FOV, 10, 150);
 
-                ImGui::SliderInt("Tree level", &treeLevel, 0, int(shared.treeLevels.levels.size()) - 1);
-//                ImGui::Text("Voxels: %d", int(shared.treeLevels.levels[treeLevel].set.size()));
+                ImGui::SliderInt("Tree level", &treeLevel, 0, int(octree.levels.size()) - 1);
+                ImGui::Text("Voxels: %d", int(octree.levels.empty() ? 0 : octree.levels[treeLevel].set.size()));
 
                 ImGui::Checkbox("Draw Model", &modelMode);
                 ImGui::Checkbox("Draw Image", &imageMode);
 
                 ImGui::Checkbox("Static Camera", &staticCameraMode);
-                if (ImGui::SliderInt("Camera ID: ", &staticCameraID, 0, int(shared.bundle.cameras.size() - 1)))
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shared.bundle.cameras[staticCameraID].photo->width, shared.bundle.cameras[staticCameraID].photo->height, 0, GL_RGB, GL_UNSIGNED_BYTE, shared.bundle.cameras[staticCameraID].photo->image.data());
+                if (ImGui::SliderInt("Camera ID", &staticCameraID, 0, int(bundle.cameras.size() - 1))) {}
+//                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shared.bundle.cameras[staticCameraID].photo->width, shared.bundle.cameras[staticCameraID].photo->height, 0, GL_RGB, GL_UNSIGNED_BYTE, shared.bundle.cameras[staticCameraID].photo->image.data());
 
                 if (ImGui::Button("Project"))
                     project();
@@ -272,18 +269,18 @@ struct Renderer {
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(shared.bundle.mesh.size() * sizeof(Triangle)), shared.bundle.mesh.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(bundle.mesh.size() * sizeof(Triangle)), bundle.mesh.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
 
-        auto &octree = shared.treeLevels.rawData;
+        auto &rawOctree = octree.rawData;
 
         glGenBuffers(1, &SSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER,
-                     GLsizeiptr(octree.size() * sizeof(Voxelizer::Octree::Node)),
-                     octree.data(), GL_DYNAMIC_DRAW);
+                     GLsizeiptr(rawOctree.size() * sizeof(Voxelizer::Octree::Node)),
+                     rawOctree.data(), GL_DYNAMIC_DRAW);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
     }
@@ -294,8 +291,9 @@ struct Renderer {
         initImage();
     }
 
-    explicit Renderer(RenderData _renderData) :
-            shared(_renderData),
+    explicit Renderer(Bundle &bundle, Voxelizer::Octree &octree) :
+            bundle(bundle),
+            octree(octree),
             camera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
     {
         initRes();

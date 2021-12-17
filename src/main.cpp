@@ -5,21 +5,12 @@
 #include <glm/vec3.hpp>
 
 int main() {
-    Bundle saharov;
-    saharov.load();
+    Bundle saharov("resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt");
 
-    //Normalizer norm(saharov.triangles);
+    Voxelizer::Octree octree(saharov.mesh);
 
-
-//    Voxelizer::VoxelSet voxelSet = Voxelizer::voxelize(saharov.triangles);
-//    auto colors = Voxelizer::colorize(voxelSet);
-//    auto treeLevels = Voxelizer::buildLevels(voxelSet, colors);
-//    treeLevels.buildRaw();
-
-    auto octree = Voxelizer::Octree({}, {});
     {
-        Renderer::RenderData data{saharov, octree, glm::vec3(0)};
-        Renderer r(data);
+        Renderer r(saharov, octree);
         r.mainLoop();
     }
 

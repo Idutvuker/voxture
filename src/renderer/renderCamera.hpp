@@ -7,7 +7,7 @@
 
 struct RenderCamera {
     const float aspectRatio;
-    float FOV = 90;
+    float FOV = 60;
 
     const float NEAR = 0.1f;
     const float FAR = 100.0f;
@@ -22,19 +22,9 @@ struct RenderCamera {
         view(glm::mat4(1))
     {}
 
-    float orbitRadius = 2.5;
-    float rotX = 0;
-    float rotY = 0;
-    glm::mat4 orbitBase = glm::mat4(1);
-
     void update(float) {
         using namespace glm;
 
         projection = glm::perspective(glm::radians(FOV), aspectRatio, NEAR, FAR);
-
-        view = translate(mat4(1), vec3(0, 0, -orbitRadius)) *
-               glm::rotate(mat4(1), rotY, glm::vec3(1.0f, 0.0f, 0.0f)) *
-               glm::rotate(mat4(1), rotX, glm::vec3(0.0f, 1.0f, 0.0f)) *
-               orbitBase;
     }
 };

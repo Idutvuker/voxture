@@ -48,7 +48,61 @@ namespace Voxelizer {
 
     using VoxelColors = std::unordered_map<Voxel, glm::u8vec3, VoxelHash>;
 
+    void voxelizeTriangle(const Triangle &tri, VoxelSet &voxelSet);
+    VoxelSet voxelize(const std::vector<Triangle> &triangles);
+
+    inline VoxelColors colorize(const VoxelSet& voxelSet) {
+        using namespace glm;
+
+        VoxelColors res;
+
+        const auto gridSize = float(voxelSet.getGridSize());
+
+        for (const auto &v: voxelSet.set)
+            res[v] = u8vec3(vec3(v.pos) / (gridSize - 1) * 255.f);
+
+        return res;
+    }
+
     struct Octree {
+        std::vector<VoxelSet> levels;
+        VoxelColors colors; // ColorMap of the last level
+
+        struct Node {
+            static constexpr u32 WHITE = 0x00ffffff;
+            static constexpr u32 ADDR_BIT = 1 << 31;
+
+            u32 vox[8];
+        };
+
+        std::vector<Node> rawData;
+
+        explicit Octree(const std::vector<Triangle> &mesh) {
+            VoxelSet voxelSet = voxelize(mesh);
+
+            colors = colorize(voxelSet);
+
+            buildLevels(voxelSet);
+            buildRaw();
+        }
+
+        void buildLevels(VoxelSet &origSet) {
+            const auto depth = origSet.level;
+
+            levels.resize(depth + 1);
+
+            levels[depth] = std::move(origSet);
+
+            for (u32 i = 0; i < depth; i++) {
+                VoxelSet &newSet = levels[depth - i - 1];
+                newSet.level = (depth - i - 1);
+
+                for (const auto &v: levels[depth - i].set) {
+                    newSet.insert(Voxel{.pos = v.pos / 2});
+                }
+            }
+        }
+
         static constexpr std::array<glm::ivec3, 8> VOX_OFFSET = {
                 glm::ivec3(0, 0, 0),
                 glm::ivec3(0, 0, 1),
@@ -60,20 +114,6 @@ namespace Voxelizer {
                 glm::ivec3(1, 1, 0),
                 glm::ivec3(1, 1, 1),
         };
-
-        std::vector<VoxelSet> levels;
-        VoxelColors colors; // ColorMap of the last level
-
-        Octree(std::vector<VoxelSet> levels, VoxelColors colors) : levels(std::move(levels)), colors(std::move(colors)) {}
-
-        struct Node {
-            static constexpr u32 WHITE = 0x00ffffff;
-            static constexpr u32 ADDR_BIT = 1 << 31;
-
-            u32 vox[8];
-        };
-
-        std::vector<Node> rawData;
 
         struct Temp {
             size_t depth;
@@ -125,41 +165,5 @@ namespace Voxelizer {
         }
 
     };
-
-    void voxelizeTriangle(const Triangle &tri, VoxelSet &voxelSet);
-    VoxelSet voxelize(const std::vector<Triangle> &triangles);
-
-    inline Octree buildLevels(const VoxelSet &origSet, const VoxelColors &colors) {
-        const auto levels = origSet.level;
-
-        std::vector<VoxelSet> res(levels + 1);
-
-        res[levels] = origSet;
-
-        for (u32 i = 0; i < levels; i++) {
-            VoxelSet newSet(levels - i - 1);
-
-            for (const auto &v: res[levels - i].set) {
-                newSet.insert(Voxel{.pos = v.pos / 2});
-            }
-
-            res[levels - i - 1] = newSet;
-        }
-
-        return {res, colors};
-    }
-
-    inline VoxelColors colorize(const VoxelSet& voxelSet) {
-        using namespace glm;
-
-        VoxelColors res;
-
-        const auto gridSize = float(voxelSet.getGridSize());
-
-        for (const auto &v: voxelSet.set)
-            res[v] = u8vec3(vec3(v.pos) / (gridSize - 1) * 255.f);
-
-        return res;
-    }
 
 }

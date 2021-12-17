@@ -16,6 +16,12 @@ struct GLFWContext {
         glViewport(0, 0, width, height);
     }
 
+    static int GLOBAL_SCROLL_Y;
+
+    static void scrollCallback(GLFWwindow*, double, double dy) {
+        GLOBAL_SCROLL_Y += int(dy);
+    }
+
     GLFWContext() {
         if (!glfwInit())
             throw std::runtime_error("GLFW failed to initialize");
@@ -31,6 +37,8 @@ struct GLFWContext {
 
         glfwMakeContextCurrent(window);
         glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+        glfwSetScrollCallback(window, scrollCallback);
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             throw std::runtime_error("GLAD failed to initialize");
@@ -52,3 +60,5 @@ struct GLFWContext {
         glfwTerminate();
     }
 };
+
+int GLFWContext::GLOBAL_SCROLL_Y = 0;

@@ -1,5 +1,6 @@
 #include "voxelizer.hpp"
 #include "../util/Logger.hpp"
+#include "../common/constants.hpp"
 
 #include <glm/geometric.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -82,7 +83,7 @@ namespace Voxelizer {
     }
 
     VoxelSet voxelize(const std::vector<Triangle> &triangles) {
-        VoxelSet voxelSet(VOXELIZE_LEVEL);
+        VoxelSet voxelSet(RESOLUTION_LEVEL);
 
         for (const auto &tri: triangles)
             voxelizeTriangle(tri, voxelSet);
