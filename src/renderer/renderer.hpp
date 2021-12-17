@@ -31,8 +31,8 @@ struct Renderer {
     GLuint VAO = 0;
     GLuint VBO = 0;
 
-    RenderCamera camera;
-    OrbitCameraController cameraController {camera, context};
+    RenderCamera renderCamera;
+    OrbitCameraController cameraController {renderCamera, context};
 
     static void processInput(GLFWwindow *window) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -41,11 +41,9 @@ struct Renderer {
 
     GLuint SSBO = 0;
 
-    void drawModel() const {
+    void drawModel(const glm::mat4 &MVPMat) const {
         using namespace glm;
         res.modelSP.use();
-
-        mat4 MVPMat = camera.projection * camera.view;
 
         GLint MVPLoc = glGetUniformLocation(res.modelSP.programID, "uModelViewProjMat");
 
@@ -66,7 +64,8 @@ struct Renderer {
     void initDepthBuffer() {
         glGenTextures(1, &depthTex);
         glBindTexture(GL_TEXTURE_2D, depthTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, context.WINDOW_WIDTH, context.WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, context.WINDOW_WIDTH, context.WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, depthMap.width, depthMap.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -134,9 +133,9 @@ struct Renderer {
             drawImage();
         else {
             if (modelMode)
-                drawModel();
+                drawModel(renderCamera.projection * renderCamera.view);
             else
-                voxelGrid.draw(camera, res, octree.levels[treeLevel], octree.colors);
+                voxelGrid.draw(renderCamera, res, octree.levels[treeLevel], octree.colors);
         }
     }
 
@@ -151,26 +150,28 @@ struct Renderer {
         if (staticCameraMode) {
             Camera &staticCam = bundle.cameras[staticCameraID];
 
-            camera.projection = staticCam.projection;
-            camera.view = staticCam.view;
+            renderCamera.projection = staticCam.projection;
+            renderCamera.view = staticCam.view;
         } else {
             cameraController.update(delta);
-            camera.update(delta);
+            renderCamera.update(delta);
         }
     }
 
 
     float linearizeDepthNDC(float depth) {
-        return (2 * camera.NEAR * camera.FAR) / (camera.FAR + camera.NEAR - depth * (camera.FAR - camera.NEAR));
+        return (2 * renderCamera.NEAR * renderCamera.FAR) / (renderCamera.FAR + renderCamera.NEAR - depth * (renderCamera.FAR - renderCamera.NEAR));
     }
 
-    Image<float> depthMap{context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+    Image<float> depthMap {bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
 
-    void updateDepthMap() {
+    void updateDepthMap(const glm::mat4 &MVPMat) {
+        glViewport(0, 0, depthMap.width, depthMap.height);
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
-        drawModel();
+        drawModel(MVPMat);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, context.WINDOW_WIDTH, context.WINDOW_HEIGHT);
 
         glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthMap.image.data());
     }
@@ -181,12 +182,15 @@ struct Renderer {
         auto &lastLevel = octree.levels.back();
         auto &colors = octree.colors;
 
-        for (const Camera &staticCam: bundle.cameras) {
-            updateDepthMap();
+//        for (const Camera &staticCam: bundle.cameras)
+        const Camera &staticCam = bundle.cameras[staticCameraID];
+        {
+            glm::mat4 viewProj = staticCam.projection * staticCam.view;
+            updateDepthMap(viewProj);
 
             for (const auto &voxel: lastLevel.set) {
-                vec3 P = (vec3(voxel.pos) + vec3(0.5)) / float(lastLevel.getGridSize());
-                vec4 S = camera.projection * camera.view * vec4(P, 1.0);
+                vec3 P = vec3(voxel.pos) / float(lastLevel.getGridSize());
+                vec4 S = viewProj * vec4(P, 1.0);
                 S /= S.w;
 
                 vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
@@ -197,7 +201,7 @@ struct Renderer {
                     const float EPS = 12.f / float(lastLevel.getGridSize());
 
                     if (modelDepth + EPS > voxelDepth)
-                        colors[voxel] = bundle.cameras[0].photo->getByTexCoord({texCoord.x, -texCoord.y});
+                        colors[voxel] = staticCam.photo->getByTexCoord({texCoord.x, -texCoord.y});
                 }
             }
         }
@@ -229,7 +233,7 @@ struct Renderer {
                 ImGui::Begin("Hello");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
-                ImGui::SliderFloat("FOV", &camera.FOV, 10, 150);
+                ImGui::SliderFloat("FOV", &renderCamera.FOV, 10, 150);
 
                 ImGui::SliderInt("Tree level", &treeLevel, 0, int(octree.levels.size()) - 1);
                 ImGui::Text("Voxels: %d", int(octree.levels.empty() ? 0 : octree.levels[treeLevel].set.size()));
@@ -293,7 +297,7 @@ struct Renderer {
     explicit Renderer(Bundle &bundle, Voxelizer::Octree &octree) :
             bundle(bundle),
             octree(octree),
-            camera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
+            renderCamera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
     {
         initRes();
     }

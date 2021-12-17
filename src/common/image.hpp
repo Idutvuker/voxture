@@ -29,12 +29,12 @@ struct Image {
 
     Image(int width, int height, int numChannels=0) : width(width), height(height), numChannels(numChannels), image(width * height * TYPE_SIZE) {}
 
-    T get(glm::uvec2 coord) {
-        auto arr = reinterpret_cast<T*>(image.data());
+    T get(glm::uvec2 coord) const {
+        auto arr = reinterpret_cast<const T*>(image.data());
         return arr[coord.y * width + coord.x];
     }
 
-    T getByTexCoord(glm::vec2 texCoord) {
+    T getByTexCoord(glm::vec2 texCoord) const {
         return get(glm::fract(texCoord) * glm::vec2(width, height));
     }
 };
