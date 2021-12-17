@@ -61,7 +61,7 @@ struct Bundle {
             glm::mat4 result = translate(mat4(1), pos) * mat4(orientation);
 
             Camera cam;
-            cam.transform = result;
+            cam.view = result;
             cam.focalLength = float(focalLength);
 
             cameras.push_back(cam);
@@ -84,6 +84,10 @@ struct Bundle {
             filestream >> imgName;
 
             camera.photo.emplace(imgDir / imgName);
+
+            float fovY = atan2f(float(camera.photo->height) / 2, camera.focalLength) * 2;
+
+            camera.projection = glm::perspective(fovY, float(camera.photo->width) / float(camera.photo->height), CAMERA_NEAR, CAMERA_FAR);
         }
 
         printf("\rLoading images done!\n");
@@ -129,6 +133,6 @@ struct Bundle {
         glm::mat4 inverseNormMat = glm::inverse(normMat);
 
         for (auto &camera: cameras)
-            camera.transform *= inverseNormMat;
+            camera.view *= inverseNormMat;
     }
 };

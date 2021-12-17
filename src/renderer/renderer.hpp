@@ -150,12 +150,9 @@ struct Renderer {
     void update(float delta) {
         if (staticCameraMode) {
             Camera &staticCam = bundle.cameras[staticCameraID];
-            auto photoHeight = 2912.f;//float(staticCam.photo->height);
-            auto aspectRatio = 4368.f / photoHeight;// float(staticCam.photo->width) / photoHeight;
-            float fovY = atan2f(photoHeight / 2, staticCam.focalLength) * 2;
 
-            camera.projection = glm::perspective(fovY, aspectRatio, camera.NEAR, camera.FAR);
-            camera.view = staticCam.transform;
+            camera.projection = staticCam.projection;
+            camera.view = staticCam.view;
         } else {
             cameraController.update(delta);
             camera.update(delta);
@@ -181,25 +178,27 @@ struct Renderer {
     void project() {
         using namespace glm;
 
-        updateDepthMap();
-
         auto &lastLevel = octree.levels.back();
         auto &colors = octree.colors;
 
-        for (const auto &voxel: lastLevel.set) {
-            vec3 P = (vec3(voxel.pos) + vec3(0.5)) / float(lastLevel.getGridSize());
-            vec4 S = camera.projection * camera.view * vec4(P, 1.0);
-            S /= S.w;
+        for (const Camera &staticCam: bundle.cameras) {
+            updateDepthMap();
 
-            vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
-            if (0 <= texCoord.x && texCoord.x < 1 && 0 <= texCoord.y && texCoord.y < 1) {
-                float modelDepth = linearizeDepthNDC(depthMap.getByTexCoord(texCoord) * 2 - 1);
-                float voxelDepth = linearizeDepthNDC(S.z);
+            for (const auto &voxel: lastLevel.set) {
+                vec3 P = (vec3(voxel.pos) + vec3(0.5)) / float(lastLevel.getGridSize());
+                vec4 S = camera.projection * camera.view * vec4(P, 1.0);
+                S /= S.w;
 
-                const float EPS = 12.f / float(lastLevel.getGridSize());
+                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
+                if (0 <= texCoord.x && texCoord.x < 1 && 0 <= texCoord.y && texCoord.y < 1) {
+                    float modelDepth = linearizeDepthNDC(depthMap.getByTexCoord(texCoord) * 2 - 1);
+                    float voxelDepth = linearizeDepthNDC(S.z);
 
-                if (modelDepth + EPS > voxelDepth)
-                    colors[voxel] = bundle.cameras[0].photo->getByTexCoord({texCoord.x, -texCoord.y});
+                    const float EPS = 12.f / float(lastLevel.getGridSize());
+
+                    if (modelDepth + EPS > voxelDepth)
+                        colors[voxel] = bundle.cameras[0].photo->getByTexCoord({texCoord.x, -texCoord.y});
+                }
             }
         }
 
