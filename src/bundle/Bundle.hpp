@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../geom/triangle.hpp"
+#include "../geom/Triangle.hpp"
 #include "BundleCamera.hpp"
 
 #include <fstream>

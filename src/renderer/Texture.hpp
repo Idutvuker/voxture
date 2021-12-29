@@ -1,5 +1,5 @@
 #include "mygl.hpp"
-#include "../common/image.hpp"
+#include "../common/Image.hpp"
 
 struct Texture {
     GLuint id;

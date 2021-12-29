@@ -1,6 +1,6 @@
 #pragma once
 
-#include "triangle.hpp"
+#include "Triangle.hpp"
 
 #include <utility>
 #include <vector>

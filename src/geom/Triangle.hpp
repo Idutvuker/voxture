@@ -12,9 +12,21 @@ struct Triangle {
     glm::vec3 b;
     glm::vec3 c;
 
-    glm::vec3& operator[](size_t index);
+    glm::vec3 &operator[](size_t index) {
+        if (index == 0)
+            return a;
+        if (index == 1)
+            return b;
+        return c;
+    }
 
-    const glm::vec3& operator[](size_t index) const;
+    const glm::vec3 &operator[](size_t index) const {
+        if (index == 0)
+            return a;
+        if (index == 1)
+            return b;
+        return c;
+    }
 };
 
 

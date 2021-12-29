@@ -1,4 +1,4 @@
-#include "renderer/renderer.hpp"
+#include "renderer/Renderer.hpp"
 #include "geom/voxelizer.hpp"
 #include "bundle/Bundle.hpp"
 

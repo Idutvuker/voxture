@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 struct Status {
     enum Value {
@@ -11,10 +12,21 @@ struct Status {
     std::string message;
 
     Status() = delete;
-    Status(Value, std::string);
+    Status(Status::Value val, std::string message) : val(val), message(std::move(message)) {}
 
-    static Status ok();
-    static Status error(const std::string &what);
+    void assertOK() {
+        if (val != OK) {
+            std::cerr << "Assert statusOK failed. Message: " << message << std::endl;
+            std::terminate();
+        }
+    }
 
-    void assertOK();
+    Status ok() {
+        return {OK, {}};
+    }
+
+    Status error(const std::string &what) {
+        return {ERROR, what};
+    }
+
 };
