@@ -12,20 +12,28 @@ public:
     class Printable {
         std::string repr;
     public:
-        const std::string& getRepr() const;
+        template<typename T,
+                std::enable_if_t<std::is_fundamental_v<T>, bool> = true>
+        Printable(const T &t) : repr(std::to_string(t)) {}
 
-        template<typename T>
-        Printable(T t) : repr(std::to_string(t)) {}
+        template<typename T,
+                std::enable_if_t<!std::is_fundamental_v<T>, bool> = true>
+        Printable(const T &t) : repr(glm::to_string(t)) {}
 
-        Printable(const glm::vec3 &t);
-        Printable(const glm::vec4 &t);
-        Printable(const glm::uvec3 &t);
-        Printable(const glm::ivec3 &t);
-        Printable(const glm::ivec2 &t);
-        Printable(const char *cStr);
+        Printable(const std::string &str) : repr(str) {}
+
+        Printable(const char *cStr) : repr(cStr) {}
+
+        const std::string& getRepr() const {
+            return repr;
+        }
     };
 
-    void info(const std::vector<Printable> &v);
+    void info(const std::vector<Printable> &v) {
+        for (const auto &p : v)
+            outStream << p.getRepr() << ' ';
+        outStream << std::endl;
+    }
 };
 
 inline Logger Log;

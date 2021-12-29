@@ -1,10 +1,10 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "../geom/Camera.hpp"
 
-struct Camera {
-    glm::mat4 view = glm::mat4(1);
-    glm::mat4 projection = glm::mat4(1);
+struct BundleCamera {
+    Camera camera;
 
     float focalLength = 0;
 

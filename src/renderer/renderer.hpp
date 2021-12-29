@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderCamera.hpp"
+#include "RenderCamera.hpp"
 #include "voxelGrid.hpp"
 #include "../util/Status.hpp"
 #include "../util/Logger.hpp"
@@ -14,6 +14,7 @@
 #include "../bundle/Bundle.hpp"
 #include "Texture.hpp"
 #include "OrbitCameraController.hpp"
+#include "../geom/Camera.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -23,7 +24,6 @@ struct Renderer {
     GLFWContext context;
     Resources res;
     VoxelGrid voxelGrid;
-
 
     Bundle &bundle;
     Voxelizer::Octree &octree;
@@ -148,13 +148,12 @@ struct Renderer {
 
     void update(float delta) {
         if (staticCameraMode) {
-            Camera &staticCam = bundle.cameras[staticCameraID];
+            BundleCamera &staticCam = bundle.cameras[staticCameraID];
 
-            renderCamera.projection = staticCam.projection;
-            renderCamera.view = staticCam.view;
+            renderCamera.view = staticCam.camera.view;
+            renderCamera.projection = staticCam.camera.projection;
         } else {
             cameraController.update(delta);
-            renderCamera.update(delta);
         }
     }
 
@@ -182,10 +181,10 @@ struct Renderer {
         auto &lastLevel = octree.levels.back();
         auto &colors = octree.colors;
 
-//        for (const Camera &staticCam: bundle.cameras)
-        const Camera &staticCam = bundle.cameras[staticCameraID];
+//        for (const BundleCamera &staticCam: bundle.cameras)
+        const BundleCamera &staticCam = bundle.cameras[staticCameraID];
         {
-            glm::mat4 viewProj = staticCam.projection * staticCam.view;
+            glm::mat4 viewProj = staticCam.camera.projection * staticCam.camera.view;
             updateDepthMap(viewProj);
 
             for (const auto &voxel: lastLevel.set) {
@@ -230,7 +229,7 @@ struct Renderer {
             ImGui::NewFrame();
 
             {
-                ImGui::Begin("Hello");
+                ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
                 ImGui::SliderFloat("FOV", &renderCamera.FOV, 10, 150);
@@ -241,8 +240,8 @@ struct Renderer {
                 ImGui::Checkbox("Draw Model", &modelMode);
                 ImGui::Checkbox("Draw Image", &imageMode);
 
-                ImGui::Checkbox("Static Camera", &staticCameraMode);
-                if (ImGui::SliderInt("Camera ID", &staticCameraID, 0, int(bundle.cameras.size() - 1))) {}
+                ImGui::Checkbox("Static BundleCamera", &staticCameraMode);
+                if (ImGui::SliderInt("BundleCamera ID", &staticCameraID, 0, int(bundle.cameras.size() - 1))) {}
 //                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shared.bundle.cameras[staticCameraID].photo->width, shared.bundle.cameras[staticCameraID].photo->height, 0, GL_RGB, GL_UNSIGNED_BYTE, shared.bundle.cameras[staticCameraID].photo->image.data());
 
                 if (ImGui::Button("Project"))

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../geom/triangle.hpp"
-#include "camera.hpp"
+#include "BundleCamera.hpp"
 
 #include <fstream>
 #include <filesystem>
@@ -13,7 +13,7 @@ namespace fs = std::filesystem;
 
 struct Bundle {
     std::vector<Triangle> mesh;
-    std::vector<Camera> cameras;
+    std::vector<BundleCamera> cameras;
 
     Bundle(const fs::path &meshFilepath, const fs::path &bundleOutFilepath, const fs::path &listFilepath, bool normalize = true) {
         getTriangles(meshFilepath.string(), mesh).assertOK();
@@ -38,7 +38,7 @@ struct Bundle {
         size_t nCameras, nPoints;
         filestream >> nCameras >> nPoints;
 
-        for (size_t c = 0; c < nCameras; c++) {
+        for (size_t c = 0; c < 2; c++) {
             double focalLength, k1, k2;
             filestream >> focalLength >> k1 >> k2;
 
@@ -60,8 +60,8 @@ struct Bundle {
 
             glm::mat4 result = translate(mat4(1), pos) * mat4(orientation);
 
-            Camera cam;
-            cam.view = result;
+            BundleCamera cam;
+            cam.camera.view = result;
             cam.focalLength = float(focalLength);
 
             cameras.push_back(cam);
@@ -75,7 +75,7 @@ struct Bundle {
 
         size_t imgId = 1;
 
-        for (Camera &camera: cameras) {
+        for (BundleCamera &camera: cameras) {
             printf("\rLoading image: %zu \\ %zu", imgId, cameras.size());
             fflush(stdout);
             imgId++;
@@ -87,7 +87,7 @@ struct Bundle {
 
             float fovY = atan2f(float(camera.photo->height) / 2, camera.focalLength) * 2;
 
-            camera.projection = glm::perspective(fovY, float(camera.photo->width) / float(camera.photo->height), CAMERA_NEAR, CAMERA_FAR);
+            camera.camera.projection = glm::perspective(fovY, float(camera.photo->width) / float(camera.photo->height), CAMERA_NEAR, CAMERA_FAR);
         }
 
         printf("\rLoading images done!\n");
@@ -133,6 +133,6 @@ struct Bundle {
         glm::mat4 inverseNormMat = glm::inverse(normMat);
 
         for (auto &camera: cameras)
-            camera.view *= inverseNormMat;
+            camera.camera.view *= inverseNormMat;
     }
 };

@@ -2,8 +2,6 @@
 #include "geom/voxelizer.hpp"
 #include "bundle/Bundle.hpp"
 
-#include <glm/vec3.hpp>
-
 int main() {
     Bundle saharov("resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt");
 

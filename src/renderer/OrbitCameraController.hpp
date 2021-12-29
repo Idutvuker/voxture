@@ -61,5 +61,8 @@ public:
                 translate(mat4(1), vec3(0, 0, -orbitRadius)) *
                 rotMatrix *
                 translate(mat4(1), orbitBase);
+
+
+        camera.projection = glm::perspective(glm::radians(camera.FOV), camera.aspectRatio, camera.NEAR, camera.FAR);
     }
 };
