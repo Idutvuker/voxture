@@ -21,11 +21,11 @@ struct Status {
         }
     }
 
-    Status ok() {
+    static Status ok() {
         return {OK, {}};
     }
 
-    Status error(const std::string &what) {
+    static Status error(const std::string &what) {
         return {ERROR, what};
     }
 
