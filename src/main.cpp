@@ -2,7 +2,7 @@
 #include "geom/voxelizer.hpp"
 #include "bundle/Bundle.hpp"
 
-int main() {
+int main2() {
     Bundle saharov("resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt");
 
     Voxelizer::Octree octree(saharov.mesh);
@@ -11,6 +11,15 @@ int main() {
         Renderer r(saharov, octree);
         r.mainLoop();
     }
+
+    return 0;
+}
+
+#include "projector/ProjectorTest.hpp"
+
+int main() {
+    ProjectorTest test;
+    test.run();
 
     return 0;
 }

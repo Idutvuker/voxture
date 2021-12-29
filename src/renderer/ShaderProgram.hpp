@@ -46,7 +46,7 @@ struct ShaderProgram {
         glUseProgram(programID);
     }
 
-private:
+
     static std::string readFile(const std::string &filepath) {
         std::ifstream t(filepath);
         if (!t)
