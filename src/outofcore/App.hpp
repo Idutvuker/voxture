@@ -1,11 +1,16 @@
 #pragma once
 
-#include "LocalRes.hpp"
+#include "../geom/intersect.hpp"
+#include "../renderer/VoxelGrid.hpp"
 
-struct Main {
+
+struct App {
+    Bundle bundle {"resources/testBundle/cow.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
+
     GLFWContext context;
     Resources res;
-    LocalRes localRes;
+
+    VoxelGrid voxelGrid;
 
     RenderCamera renderCamera {float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT)};
     OrbitCameraController cameraController {renderCamera, context};
@@ -42,14 +47,21 @@ struct Main {
 
             glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * mesh.size()));
         }
-    } model {localRes.mesh, res};
+    } model {bundle.mesh, res};
 
     void update(float delta) {
         cameraController.update(delta);
     }
 
+    bool drawMode = true;
+
+    int level = 4;
+
     void draw() {
-        model.draw(renderCamera.view * renderCamera.projection);
+        if (drawMode)
+            model.draw(renderCamera.projection * renderCamera.view);
+        else
+            voxelGrid.drawFromVec(renderCamera, res, voxels, (1 << level));
     }
 
     void run() {
@@ -73,6 +85,15 @@ struct Main {
                 ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
+                ImGui::Checkbox("Draw Model", &drawMode);
+
+                ImGui::SliderInt("Level", &level, 0, 10);
+
+                ImGui::Text("Voxel count: %zu", voxels.size());
+
+                if (ImGui::Button("Rebuild tree"))
+                    buildTree();
+
                 ImGui::End();
             }
 
@@ -90,5 +111,31 @@ struct Main {
         }
     }
 
-    Main() = default;
+    App() = default;
+
+    std::vector<Voxelizer::Voxel> voxels;
+
+    void buildTree() {
+        voxels.clear();
+
+        const uint gridSize = 1 << level;
+
+        const float voxelSize = 1.f / float(gridSize);
+
+        for (uint x = 0; x < gridSize; x++) {
+            for (uint y = 0; y < gridSize; y++) {
+                for (uint z = 0; z < gridSize; z++) {
+
+                    glm::uvec3 pos(x, y, z);
+                    for (const auto &tri: bundle.mesh) {
+                        if (intersect::triCubeOverlap(glm::vec3(pos) * voxelSize, voxelSize, tri)) {
+                            voxels.push_back(Voxelizer::Voxel{pos});
+                            break;
+                        }
+                    }
+
+                }
+            }
+        }
+    }
 };

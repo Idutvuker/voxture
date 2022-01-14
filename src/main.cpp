@@ -15,10 +15,10 @@ int main2() {
     return 0;
 }
 
-#include "outofcore/Main.hpp"
+#include "outofcore/App.hpp"
 
 int main() {
-    Main app;
+    App app;
     app.run();
 
     return 0;

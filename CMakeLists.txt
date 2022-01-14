@@ -9,7 +9,7 @@ add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c")
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.hpp")
 set(TARGET_NAME voxture)
-add_executable(${TARGET_NAME} ${SRC_FILES})
+add_executable(${TARGET_NAME} ${SRC_FILES} src/geom/intersect.hpp)
 
 
 set(IMGUI_PATH "external/imgui")

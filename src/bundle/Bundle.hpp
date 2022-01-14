@@ -38,6 +38,7 @@ struct Bundle {
         size_t nCameras, nPoints;
         filestream >> nCameras >> nPoints;
 
+        return;
         for (size_t c = 0; c < nCameras; c++) {
             double focalLength, k1, k2;
             filestream >> focalLength >> k1 >> k2;

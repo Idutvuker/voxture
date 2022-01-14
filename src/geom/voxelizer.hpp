@@ -48,6 +48,8 @@ namespace Voxelizer {
 
     using VoxelColors = std::unordered_map<Voxel, glm::u8vec3, VoxelHash>;
 
+    bool schwarz_seidel_test(glm::vec3 voxelPos, float gridSize, const Triangle &tri);
+
     void voxelizeTriangle(const Triangle &tri, VoxelSet &voxelSet);
     VoxelSet voxelize(const std::vector<Triangle> &triangles);
 
