@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../geom/intersect.hpp"
 #include "../renderer/VoxelGrid.hpp"
-
+#include "TreeBuilder.hpp"
 
 struct App {
     Bundle bundle {"resources/testBundle/cow.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
@@ -14,6 +13,8 @@ struct App {
 
     RenderCamera renderCamera {float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT)};
     OrbitCameraController cameraController {renderCamera, context};
+
+    TreeBuilder treeBuilder {bundle.mesh};
 
     struct Model {
         GLuint VAO;
@@ -55,14 +56,14 @@ struct App {
 
     bool drawMode = true;
 
-    int level = 4;
-
     void draw() {
         if (drawMode)
             model.draw(renderCamera.projection * renderCamera.view);
         else
-            voxelGrid.drawFromVec(renderCamera, res, voxels, (1 << level));
+            voxelGrid.drawFromVec(renderCamera, res, treeBuilder.voxels, (1 << treeBuilder.maxLevel));
     }
+
+    int maxLevelWrapper = int(treeBuilder.maxLevel);
 
     void run() {
         glEnable(GL_DEPTH_TEST);
@@ -87,12 +88,13 @@ struct App {
 
                 ImGui::Checkbox("Draw Model", &drawMode);
 
-                ImGui::SliderInt("Level", &level, 0, 10);
+                if (ImGui::SliderInt("Level", &maxLevelWrapper, 0, 10))
+                    treeBuilder.maxLevel = uint(maxLevelWrapper);
 
-                ImGui::Text("Voxel count: %zu", voxels.size());
+                ImGui::Text("Voxel count: %zu", treeBuilder.voxels.size());
 
                 if (ImGui::Button("Rebuild tree"))
-                    buildTree();
+                    treeBuilder.buildTree(renderCamera);
 
                 ImGui::End();
             }
@@ -112,30 +114,4 @@ struct App {
     }
 
     App() = default;
-
-    std::vector<Voxelizer::Voxel> voxels;
-
-    void buildTree() {
-        voxels.clear();
-
-        const uint gridSize = 1 << level;
-
-        const float voxelSize = 1.f / float(gridSize);
-
-        for (uint x = 0; x < gridSize; x++) {
-            for (uint y = 0; y < gridSize; y++) {
-                for (uint z = 0; z < gridSize; z++) {
-
-                    glm::uvec3 pos(x, y, z);
-                    for (const auto &tri: bundle.mesh) {
-                        if (intersect::triCubeOverlap(glm::vec3(pos) * voxelSize, voxelSize, tri)) {
-                            voxels.push_back(Voxelizer::Voxel{pos});
-                            break;
-                        }
-                    }
-
-                }
-            }
-        }
-    }
 };

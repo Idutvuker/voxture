@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(external "external/glad/include")
 
 find_package(glfw3 REQUIRED)
-add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c")
+add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c" src/outofcore/TreeBuilder.hpp)
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.hpp")
 set(TARGET_NAME voxture)
