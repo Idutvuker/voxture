@@ -5,11 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(external "external/glad/include")
 
 find_package(glfw3 REQUIRED)
-add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c" src/outofcore/TreeBuilder.hpp)
+add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c" src/outofcore/TreeBuilder.hpp src/outofcore/DBH.hpp)
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.hpp")
 set(TARGET_NAME voxture)
-add_executable(${TARGET_NAME} ${SRC_FILES} src/geom/intersect.hpp)
+add_executable(${TARGET_NAME} ${SRC_FILES} src/geom/intersect.hpp src/geom/Frustum.hpp)
 
 
 set(IMGUI_PATH "external/imgui")

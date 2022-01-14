@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../geom/intersect.hpp"
+#include "../geom/Frustum.hpp"
 
 struct TreeBuilder {
     using TriIndices = std::vector<size_t>;
@@ -17,14 +18,19 @@ struct TreeBuilder {
             glm::uvec3(1, 1, 1),
     };
 
-    uint maxLevel = 0;
     const std::vector<Triangle> &mesh;
-    std::vector <Voxelizer::Voxel> voxels;
-
     explicit TreeBuilder(const std::vector<Triangle> &_mesh): mesh(_mesh) {}
 
-    void buildTree(Camera camera) {
+    uint maxLevel = 0;
+
+    Frustum frustum;
+
+    std::vector <Voxelizer::Voxel> voxels;
+
+    void buildTree(Camera _camera) {
         voxels.clear();
+
+        frustum = Frustum(_camera.projection * _camera.view);
 
         TriIndices allIndices(mesh.size());
         for (size_t i = 0; i < mesh.size(); i++)
@@ -54,31 +60,41 @@ struct TreeBuilder {
 //        }
     }
 
-    bool dfs(uint level, glm::uvec3 vox, const TriIndices &relevant) {
+
+    // TODO: Optimize first level
+    bool dfs(uint level, const glm::uvec3 &vox, const TriIndices &relevant) {
+        using namespace glm;
+
         if (level > maxLevel)
             return false;
 
-        const uint gridSize = 1 << level;
-        const float voxelSize = 1.f / float(gridSize);
+        const float voxelSize = 1.f / float(1 << level);
+        vec3 pos = vec3(vox) * voxelSize;
 
         TriIndices intersection;
 
-        for (const auto &triId: relevant) {
-            if (intersect::triCubeOverlap(glm::vec3(vox) * voxelSize, voxelSize, mesh[triId])) {
-                intersection.push_back(triId);
-            }
+        FrustumTest: {
+            if (!frustum.IsBoxVisible(pos, pos + vec3(voxelSize)))
+                return false;
         }
 
-        if (intersection.empty())
-            return false;
+        IntersectionTest: {
+            for (const auto &triId: relevant) {
+                if (intersect::triCubeOverlap(pos, voxelSize, mesh[triId])) {
+                    intersection.push_back(triId);
+                }
+            }
 
-        bool isLeaf = true;
+            if (intersection.empty())
+                return false;
+        }
+
         for (const auto &offs: VOX_OFFSET)
-            if (dfs(level + 1, vox * uint(2) + offs, intersection))
-                isLeaf = false;
+            dfs(level + 1, vox * uint(2) + offs, intersection);
 
-        if (isLeaf)
+        if (level == maxLevel) {
             voxels.push_back(Voxelizer::Voxel{vox});
+        }
 
         return true;
     }

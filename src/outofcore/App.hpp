@@ -3,6 +3,8 @@
 #include "../renderer/VoxelGrid.hpp"
 #include "TreeBuilder.hpp"
 
+#include "DBH.hpp"
+
 struct App {
     Bundle bundle {"resources/testBundle/cow.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
 
