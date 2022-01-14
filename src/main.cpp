@@ -15,11 +15,11 @@ int main2() {
     return 0;
 }
 
-#include "projector/ProjectorTest.hpp"
+#include "outofcore/Main.hpp"
 
 int main() {
-    ProjectorTest test;
-    test.run();
+    Main app;
+    app.run();
 
     return 0;
 }
