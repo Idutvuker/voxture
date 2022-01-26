@@ -160,10 +160,7 @@ struct App {
         }
     }
 
-    App() {
-        for (int i = 0; i < 10; i++)
-            printf("%d %d %d\n", photo.image[i].r, photo.image[i].g, photo.image[i].b);
-    }
+    App() = default;
 
     DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
     TreeBuilder treeBuilder {bundle.mesh, dbh};
