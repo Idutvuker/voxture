@@ -50,7 +50,6 @@ struct TreeBuilder {
             S /= S.w;
 
             glm::vec2 texCoord = (glm::vec2(S.x, -S.y) + 1.f) / 2.f;
-            Log.info({vox.pos, texCoord});
 
             colors.push_back(img.getByTexCoord(texCoord));
         }
