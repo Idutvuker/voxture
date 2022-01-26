@@ -29,9 +29,11 @@ struct TreeBuilder {
     glm::mat4 MVPMat;
 
     std::vector <Voxelizer::Voxel> voxels;
+    std::vector <glm::u8vec3> colors;
 
-    void buildTree(Camera camera) {
+    void buildTree(const Camera &camera, const Image<glm::u8vec3> &img) {
         voxels.clear();
+        colors.clear();
 
         MVPMat = camera.getViewProj();
         frustum = Frustum(MVPMat);
@@ -41,6 +43,17 @@ struct TreeBuilder {
             allIndices[i] = i;
 
         dfs(0, glm::uvec3(0), allIndices);
+
+        for (const auto &vox: voxels) {
+            glm::vec3 pos = glm::vec3(vox.pos) / float(1 << maxLevel);
+            glm::vec4 S = MVPMat * glm::vec4(pos, 1.0);
+            S /= S.w;
+
+            glm::vec2 texCoord = (glm::vec2(S.x, -S.y) + 1.f) / 2.f;
+            Log.info({vox.pos, texCoord});
+
+            colors.push_back(img.getByTexCoord(texCoord));
+        }
     }
 
 

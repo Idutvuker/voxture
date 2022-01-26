@@ -84,19 +84,6 @@ struct DBH {
             glm::uvec2(1, 1),
     };
 
-    static int aabbInside(const glm::vec2 &innerMin, const glm::vec2 &innerMax, const glm::vec2 &outerMin, const glm::vec2 &outerMax) {
-        using namespace glm;
-        if (all(lessThanEqual(outerMin, innerMin))) {
-            if (all(lessThanEqual(innerMax, outerMax)))
-                return 2; // inner inside outer
-            if (all(lessThanEqual(innerMin, outerMax)))
-                return 1; // intersect
-            return 0; // do not intersect
-        }
-
-        return all(lessThan(innerMin, outerMax)) && all(lessThan(outerMin, innerMax)) ? 1 : 0;
-    }
-
     static int aabbInside(const glm::uvec2 &innerMin, const glm::uvec2 &innerMax, const glm::uvec2 &outerMin, const glm::uvec2 &outerMax) {
         using namespace glm;
         if (all(lessThanEqual(outerMin, innerMin))) {

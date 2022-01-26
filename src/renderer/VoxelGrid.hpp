@@ -100,7 +100,8 @@ struct VoxelGrid {
         }
     }
 
-    void drawFromVec(const Camera &camera, const Resources &res, const std::vector<Voxelizer::Voxel> &voxels, uint gridSize) {
+    void drawFromVec(const Camera &camera, const Resources &res, uint gridSize,
+                     const std::vector<Voxelizer::Voxel> &voxels, const std::vector<glm::u8vec3> &colors) {
         using namespace glm;
 
         glBindVertexArray(VAO);
@@ -114,15 +115,19 @@ struct VoxelGrid {
         mat4 ViewProjMat = camera.projection * camera.view;
         mat4 base = scale(mat4(1), vec3(voxelSize));
 
-        for (const auto &voxel: voxels) {
+        for (size_t i = 0; i < voxels.size(); i++) {
+            const auto &voxel = voxels[i];
+            const u8vec3 &color = colors[i];
+
             vec3 pos = vec3(voxel.pos);
             mat4 model = translate(base, pos);
             mat4 MVPMat = ViewProjMat * model;
 
             glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
 
-            vec3 color = pos * voxelSize;
-            glUniform3fv(ColorLoc, 1, value_ptr(color));
+            vec3 color3f = vec3(color) / 255.f;
+//            vec3 color3f = pos * voxelSize;
+            glUniform3fv(ColorLoc, 1, value_ptr(color3f));
 
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
         }

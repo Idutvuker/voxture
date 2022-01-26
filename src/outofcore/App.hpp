@@ -91,7 +91,7 @@ struct App {
         if (drawMode == DrawMode::MODEL)
             model.draw(renderCamera.projection * renderCamera.view);
         else if (drawMode == DrawMode::VOXELS)
-            voxelGrid.drawFromVec(renderCamera, res, treeBuilder.voxels, (1 << treeBuilder.maxLevel));
+            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels, treeBuilder.colors);
         else
             viewPlane.draw();
     }
@@ -160,14 +160,20 @@ struct App {
         }
     }
 
-    App() = default;
+    App() {
+        for (int i = 0; i < 10; i++)
+            printf("%d %d %d\n", photo.image[i].r, photo.image[i].g, photo.image[i].b);
+    }
 
     DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
     TreeBuilder treeBuilder {bundle.mesh, dbh};
 
     std::function<void()> drawFunc = [this] () { model.draw(renderCamera.getViewProj()); };
+
+    Image<glm::u8vec3> photo { "resources/textures/bigTest.jpg" };
+
     void rebuildTree() {
         dbh.update(drawFunc);
-        treeBuilder.buildTree(renderCamera);
+        treeBuilder.buildTree(renderCamera, photo);
     }
 };
