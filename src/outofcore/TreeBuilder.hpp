@@ -2,6 +2,7 @@
 
 #include "../geom/intersect.hpp"
 #include "../geom/Frustum.hpp"
+#include "DBH.hpp"
 
 struct TreeBuilder {
     using TriIndices = std::vector<size_t>;
@@ -19,45 +20,27 @@ struct TreeBuilder {
     };
 
     const std::vector<Triangle> &mesh;
-    explicit TreeBuilder(const std::vector<Triangle> &_mesh): mesh(_mesh) {}
+    const DBH &dbh;
+    explicit TreeBuilder(const std::vector<Triangle> &_mesh, const DBH &_dbh): mesh(_mesh), dbh(_dbh) {}
 
     uint maxLevel = 0;
 
     Frustum frustum;
+    glm::mat4 MVPMat;
 
     std::vector <Voxelizer::Voxel> voxels;
 
-    void buildTree(Camera _camera) {
+    void buildTree(Camera camera) {
         voxels.clear();
 
-        frustum = Frustum(_camera.projection * _camera.view);
+        MVPMat = camera.getViewProj();
+        frustum = Frustum(MVPMat);
 
         TriIndices allIndices(mesh.size());
         for (size_t i = 0; i < mesh.size(); i++)
             allIndices[i] = i;
 
         dfs(0, glm::uvec3(0), allIndices);
-
-//        glm::mat4 MVPMat = camera.projection * camera.view;
-//
-//        const uint gridSize = 1 << maxLevel;
-//        const float voxelSize = 1.f / float(gridSize);
-//
-//        for (uint x = 0; x < gridSize; x++) {
-//            for (uint y = 0; y < gridSize; y++) {
-//                for (uint z = 0; z < gridSize; z++) {
-//
-//                    glm::uvec3 pos(x, y, z);
-//                    for (const auto &tri: mesh) {
-//                        if (intersect::triCubeOverlap(glm::vec3(pos) * voxelSize, voxelSize, tri)) {
-//                            voxels.push_back(Voxelizer::Voxel{pos});
-//                            break;
-//                        }
-//                    }
-//
-//                }
-//            }
-//        }
     }
 
 
@@ -75,6 +58,35 @@ struct TreeBuilder {
 
         FrustumTest: {
             if (!frustum.IsBoxVisible(pos, pos + vec3(voxelSize)))
+                return false;
+        }
+
+        DepthTest: {
+            float minDepth = 1.0f;
+
+            // TexCoord AABB
+            vec2 aabbMin(1);
+            vec2 aabbMax(0);
+
+            for (const auto &offs: VOX_OFFSET) {
+                vec3 P = vec3(vox + offs) * voxelSize;
+                vec4 S = MVPMat * vec4(P, 1.0);
+                S /= S.w;
+
+                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
+
+                minDepth = min(minDepth, S.z);
+
+                aabbMin = min(aabbMin, texCoord);
+                aabbMax = max(aabbMax, texCoord);
+            }
+
+            aabbMin = max(aabbMin, vec2(0));
+            aabbMax = min(aabbMax, vec2(1));
+
+            float modelDepth = dbh.queryMax(aabbMin, aabbMax) * 2 - 1;
+
+            if (minDepth >= modelDepth)
                 return false;
         }
 

@@ -2,7 +2,7 @@
 
 #include "mygl.hpp"
 
-class OrbitCameraController {
+struct OrbitCameraController {
     RenderCamera &camera;
     GLFWContext &context;
 

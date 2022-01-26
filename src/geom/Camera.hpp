@@ -5,4 +5,12 @@
 struct Camera {
     glm::mat4 view = glm::mat4(1);
     glm::mat4 projection = glm::mat4(1);
+
+    glm::mat4 getViewProj() const {
+        return projection * view;
+    }
+
+    static float linearizeDepthNDC(float depth) {
+        return (2 * CAMERA_NEAR * CAMERA_FAR) / (CAMERA_FAR + CAMERA_NEAR - depth * (CAMERA_FAR - CAMERA_NEAR));
+    }
 };

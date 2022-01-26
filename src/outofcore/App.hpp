@@ -16,8 +16,6 @@ struct App {
     RenderCamera renderCamera {float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT)};
     OrbitCameraController cameraController {renderCamera, context};
 
-    TreeBuilder treeBuilder {bundle.mesh};
-
     struct Model {
         GLuint VAO;
         GLuint VBO;
@@ -52,20 +50,55 @@ struct App {
         }
     } model {bundle.mesh, res};
 
+
+    struct ViewPlane {
+        GLuint VAO;
+        GLuint VBO;
+
+        const Resources &res;
+
+        ViewPlane(const Resources &_res) : res(_res) {
+            std::array<GLfloat, 6 * 3> tris = { -1, 1, 0, -1, -1, 0, 1, 1, 0, 1, 1, 0, -1, -1, 0, 1, -1, 0 };
+
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+
+            glBindVertexArray(VAO);
+
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(tris.size() * sizeof(GLfloat)), tris.data(), GL_STATIC_DRAW);
+
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+            glEnableVertexAttribArray(0);
+        }
+
+        void draw() {
+            res.imageSP.use();
+
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+    } viewPlane { res };
+
+    enum class DrawMode : int {
+        MODEL, VOXELS, VIEW_PLANE
+    } drawMode = DrawMode::MODEL;
+
+    int maxLevelWrapper = 0;
+    int DBHLevel = 0;
+
+    void draw() {
+        if (drawMode == DrawMode::MODEL)
+            model.draw(renderCamera.projection * renderCamera.view);
+        else if (drawMode == DrawMode::VOXELS)
+            voxelGrid.drawFromVec(renderCamera, res, treeBuilder.voxels, (1 << treeBuilder.maxLevel));
+        else
+            viewPlane.draw();
+    }
+
     void update(float delta) {
         cameraController.update(delta);
     }
-
-    bool drawMode = true;
-
-    void draw() {
-        if (drawMode)
-            model.draw(renderCamera.projection * renderCamera.view);
-        else
-            voxelGrid.drawFromVec(renderCamera, res, treeBuilder.voxels, (1 << treeBuilder.maxLevel));
-    }
-
-    int maxLevelWrapper = int(treeBuilder.maxLevel);
 
     void run() {
         glEnable(GL_DEPTH_TEST);
@@ -88,15 +121,27 @@ struct App {
                 ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
-                ImGui::Checkbox("Draw Model", &drawMode);
+                {
+                    if (ImGui::Button("Draw Model"))
+                        drawMode = DrawMode::MODEL;
 
-                if (ImGui::SliderInt("Level", &maxLevelWrapper, 0, 10))
+                    if (ImGui::Button("Draw View Plane"))
+                        drawMode = DrawMode::VIEW_PLANE;
+
+                    if (ImGui::Button("Draw Voxels"))
+                        drawMode = DrawMode::VOXELS;
+                }
+
+                if (ImGui::SliderInt("Tree max level", &maxLevelWrapper, 0, 10))
                     treeBuilder.maxLevel = uint(maxLevelWrapper);
+
+                if (ImGui::SliderInt("DBH level", &DBHLevel, 0, int(dbh.data.size() - 1)))
+                    dbh.debugLevel(DBHLevel);
 
                 ImGui::Text("Voxel count: %zu", treeBuilder.voxels.size());
 
                 if (ImGui::Button("Rebuild tree"))
-                    treeBuilder.buildTree(renderCamera);
+                    rebuildTree();
 
                 ImGui::End();
             }
@@ -116,4 +161,13 @@ struct App {
     }
 
     App() = default;
+
+    DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+    TreeBuilder treeBuilder {bundle.mesh, dbh};
+
+    std::function<void()> drawFunc = [this] () { model.draw(renderCamera.getViewProj()); };
+    void rebuildTree() {
+        dbh.update(drawFunc);
+        treeBuilder.buildTree(renderCamera);
+    }
 };
