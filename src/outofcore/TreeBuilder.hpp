@@ -4,6 +4,8 @@
 #include "../geom/Frustum.hpp"
 #include "DBH.hpp"
 
+#include "Timer.hpp"
+
 struct TreeBuilder {
     using TriIndices = std::vector<size_t>;
 
@@ -31,7 +33,13 @@ struct TreeBuilder {
     std::vector <Voxelizer::Voxel> voxels;
     std::vector <glm::u8vec3> colors;
 
+    Timer timer;
+
     void buildTree(const Camera &camera, const Image<glm::u8vec3> &img) {
+        frustumTime = 0;
+        depthTime = 0;
+        intersectTime = 0;
+
         voxels.clear();
         colors.clear();
 
@@ -44,6 +52,12 @@ struct TreeBuilder {
 
         dfs(0, glm::uvec3(0), allIndices);
 
+        printf("----------\n");
+        printf("frust %f\n", frustumTime);
+        printf("depth %f\n", depthTime);
+        printf("intersect %f\n", intersectTime);
+
+        timer.tick();
         for (const auto &vox: voxels) {
             glm::vec3 pos = glm::vec3(vox.pos) / float(1 << maxLevel);
             glm::vec4 S = MVPMat * glm::vec4(pos, 1.0);
@@ -53,8 +67,15 @@ struct TreeBuilder {
 
             colors.push_back(img.getByTexCoord(texCoord));
         }
+
+        double colorTime = timer.tick();
+        printf("color %f\n", colorTime);
     }
 
+
+    double frustumTime;
+    double depthTime;
+    double intersectTime;
 
     // TODO: Optimize first level
     bool dfs(uint level, const glm::uvec3 &vox, const TriIndices &relevant) {
@@ -68,39 +89,46 @@ struct TreeBuilder {
 
         TriIndices intersection;
 
+        timer.tick();
+
         FrustumTest: {
             if (!frustum.IsBoxVisible(pos, pos + vec3(voxelSize)))
                 return false;
         }
+        frustumTime += timer.tick();
 
-        DepthTest: {
-            float minDepth = 1.0f;
+//        DepthTest: {
+//            float minDepth = 1.0f;
+//
+//            // TexCoord AABB
+//            vec2 aabbMin(1);
+//            vec2 aabbMax(0);
+//
+//            for (const auto &offs: VOX_OFFSET) {
+//                vec3 P = vec3(vox + offs) * voxelSize;
+//                vec4 S = MVPMat * vec4(P, 1.0);
+//                S /= S.w;
+//
+//                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
+//
+//                minDepth = min(minDepth, S.z);
+//
+//                aabbMin = min(aabbMin, texCoord);
+//                aabbMax = max(aabbMax, texCoord);
+//            }
+//
+//            aabbMin = max(aabbMin, vec2(0));
+//            aabbMax = min(aabbMax, vec2(1));
+//
+//            float modelDepth = dbh.queryMax(aabbMin, aabbMax) * 2 - 1;
+//
+//            if (minDepth >= modelDepth)
+//                return false;
+//        }
+        depthTime += timer.tick();
 
-            // TexCoord AABB
-            vec2 aabbMin(1);
-            vec2 aabbMax(0);
-
-            for (const auto &offs: VOX_OFFSET) {
-                vec3 P = vec3(vox + offs) * voxelSize;
-                vec4 S = MVPMat * vec4(P, 1.0);
-                S /= S.w;
-
-                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
-
-                minDepth = min(minDepth, S.z);
-
-                aabbMin = min(aabbMin, texCoord);
-                aabbMax = max(aabbMax, texCoord);
-            }
-
-            aabbMin = max(aabbMin, vec2(0));
-            aabbMax = min(aabbMax, vec2(1));
-
-            float modelDepth = dbh.queryMax(aabbMin, aabbMax) * 2 - 1;
-
-            if (minDepth >= modelDepth)
-                return false;
-        }
+//        std::vector<size_t> childrenIDs;
+//        childrenIDs.reserve(VOX_OFFSET.size());
 
         IntersectionTest: {
             for (const auto &triId: relevant) {
@@ -112,6 +140,7 @@ struct TreeBuilder {
             if (intersection.empty())
                 return false;
         }
+        intersectTime += timer.tick();
 
         for (const auto &offs: VOX_OFFSET)
             dfs(level + 1, vox * uint(2) + offs, intersection);

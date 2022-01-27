@@ -243,7 +243,7 @@ namespace intersect {
         return true; /* box and triangle overlaps */
     }
 
-    bool triCubeOverlap(glm::vec3 cubeBegin, float cubeSize, const Triangle &tri) {
+    bool triCubeOverlap(const glm::vec3 &cubeBegin, float cubeSize, const Triangle &tri) {
         return triBoxOverlap(cubeBegin + cubeSize / 2, glm::vec3(cubeSize / 2), tri[0], tri[1], tri[2]);
     }
 }

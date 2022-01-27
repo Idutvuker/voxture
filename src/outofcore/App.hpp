@@ -6,7 +6,7 @@
 #include "DBH.hpp"
 
 struct App {
-    Bundle bundle {"resources/testBundle/cow.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
+    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
 
     GLFWContext context;
     Resources res;
@@ -140,6 +140,8 @@ struct App {
 
                 ImGui::Text("Voxel count: %zu", treeBuilder.voxels.size());
 
+                ImGui::SliderInt("Bundle Camera", &bundleCameraID, 0, int(bundle.cameras.size() - 1));
+
                 if (ImGui::Button("Rebuild tree"))
                     rebuildTree();
 
@@ -162,15 +164,18 @@ struct App {
 
     App() = default;
 
-    DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
     TreeBuilder treeBuilder {bundle.mesh, dbh};
 
-    std::function<void()> drawFunc = [this] () { model.draw(renderCamera.getViewProj()); };
+    std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
 
-    Image<glm::u8vec3> photo { "resources/textures/bigTest.jpg" };
+
+    int bundleCameraID = 0;
 
     void rebuildTree() {
-        dbh.update(drawFunc);
-        treeBuilder.buildTree(renderCamera, photo);
+        const BundleCamera &cam = bundle.cameras[bundleCameraID];
+
+        dbh.update(drawFunc, cam.camera.getViewProj());
+        treeBuilder.buildTree(cam.camera, cam.photo.value());
     }
 };

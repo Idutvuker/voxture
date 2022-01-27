@@ -31,12 +31,12 @@ struct DBH {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void update(const std::function<void()> &drawFunc) {
+    void update(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4& MVPMat) {
         glViewport(0, 0, width, height);
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        drawFunc();
+        drawFunc(MVPMat);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, context.WINDOW_WIDTH, context.WINDOW_HEIGHT);
