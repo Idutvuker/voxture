@@ -175,7 +175,11 @@ struct App {
     void rebuildTree() {
         const BundleCamera &cam = bundle.cameras[bundleCameraID];
 
+        Timer timer;
+        timer.tick();
         dbh.update(drawFunc, cam.camera.getViewProj());
+        printf("update dbh %f\n", timer.tick());
+
         treeBuilder.buildTree(cam.camera, cam.photo.value());
     }
 };

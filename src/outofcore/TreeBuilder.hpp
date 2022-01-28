@@ -97,38 +97,36 @@ struct TreeBuilder {
         }
         frustumTime += timer.tick();
 
-//        DepthTest: {
-//            float minDepth = 1.0f;
-//
-//            // TexCoord AABB
-//            vec2 aabbMin(1);
-//            vec2 aabbMax(0);
-//
-//            for (const auto &offs: VOX_OFFSET) {
-//                vec3 P = vec3(vox + offs) * voxelSize;
-//                vec4 S = MVPMat * vec4(P, 1.0);
-//                S /= S.w;
-//
-//                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
-//
-//                minDepth = min(minDepth, S.z);
-//
-//                aabbMin = min(aabbMin, texCoord);
-//                aabbMax = max(aabbMax, texCoord);
-//            }
-//
-//            aabbMin = max(aabbMin, vec2(0));
-//            aabbMax = min(aabbMax, vec2(1));
-//
-//            float modelDepth = dbh.queryMax(aabbMin, aabbMax) * 2 - 1;
-//
-//            if (minDepth >= modelDepth)
-//                return false;
-//        }
+        DepthTest: {
+            float minDepth = 1.0f;
+
+            // TexCoord AABB
+            vec2 aabbMin(1);
+            vec2 aabbMax(0);
+
+            for (const auto &offs: VOX_OFFSET) {
+                vec3 P = vec3(vox + offs) * voxelSize;
+                vec4 S = MVPMat * vec4(P, 1.0);
+                S /= S.w;
+
+                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
+
+                minDepth = min(minDepth, S.z);
+
+                aabbMin = min(aabbMin, texCoord);
+                aabbMax = max(aabbMax, texCoord);
+            }
+
+            aabbMin = max(aabbMin, vec2(0));
+            aabbMax = min(aabbMax, vec2(1));
+
+            float modelDepth = dbh.queryMaxApprox(aabbMin, aabbMax) * 2 - 1;
+
+            if (minDepth >= modelDepth)
+                return false;
+        }
         depthTime += timer.tick();
 
-//        std::vector<size_t> childrenIDs;
-//        childrenIDs.reserve(VOX_OFFSET.size());
 
         IntersectionTest: {
             for (const auto &triId: relevant) {

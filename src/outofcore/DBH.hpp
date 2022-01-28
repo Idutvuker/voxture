@@ -97,7 +97,11 @@ struct DBH {
         return all(lessThan(innerMin, outerMax)) && all(lessThan(outerMin, innerMax)) ? 1 : 0;
     }
 
+    mutable uint visited;
+
     float getMax(uint level, const glm::uvec2 &pixel, const glm::uvec2 &from, const glm::uvec2 &to) const {
+        visited += 1;
+
         using namespace glm;
 
         auto &img = data[data.size() - level - 1];
@@ -128,6 +132,7 @@ struct DBH {
     }
 
     float queryMax(const glm::vec2 &rangeMin, const glm::vec2 &rangeMax) const {
+        visited = 0;
         using namespace glm;
 
         uvec2 bounds(width - 1, height - 1);
@@ -136,7 +141,45 @@ struct DBH {
         uvec2 from = min(uvec2(dims * rangeMin), bounds);
         uvec2 to = min(uvec2(dims * rangeMax), bounds);
 
-        return getMax(0, glm::uvec2(0), from, to);
+        auto res = getMax(0, glm::uvec2(0), from, to);
+
+        Log.info({rangeMin, rangeMax, "visited:", visited});
+
+        return res;
+    }
+
+    static int powerOfTwo(uint x) {
+        for (int i = 0; i < 32; i++)
+            if (x <= (1 << i))
+                return i;
+
+        return -1;
+    }
+
+    float queryMaxApprox(const glm::vec2 &rangeMin, const glm::vec2 &rangeMax) const {
+        const auto &img = data.front();
+
+        using namespace glm;
+
+        uvec2 bounds(width - 1, height - 1);
+        vec2 dims(width, height);
+
+        uvec2 from = min(uvec2(dims * rangeMin), bounds);
+        uvec2 to = min(uvec2(dims * rangeMax), bounds);
+
+        uvec2 diff = to - from;
+
+        uint size = max(diff.x, diff.y);
+
+        uint level = min(uint(powerOfTwo(size) + 1), uint(data.size() - 1));
+        if (level == 0)
+            return 1;   // size is (0, 0)
+
+        uvec2 resFrom = from >> level;
+
+//        Log.info({from, to, size, level, resFrom, resTo, data[level].width, data[level].height});
+
+        return data[level].get(resFrom);
     }
 
     void debugLevel(int level) {
