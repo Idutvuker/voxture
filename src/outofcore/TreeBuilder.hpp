@@ -6,7 +6,6 @@
 
 #include "Octree.hpp"
 #include "../common/constants.hpp"
-#include "Timer.hpp"
 
 struct TreeBuilder {
     using TriIndices = std::vector<size_t>;
@@ -22,38 +21,20 @@ struct TreeBuilder {
 
     Octree octree;
 
-    Timer timer;
     glm::vec2 imgDims;
 
-    void buildTree(const Camera &camera, const Image<glm::u8vec3> &img) {
-        frustumTime = 0;
-        depthTime = 0;
-        intersectTime = 0;
-
-        imgDims = glm::vec2(img.width, img.height);
+    void buildTree(const glm::mat4 &a_MVPMat, const Image<glm::u8vec3> &img) {
+        MVPMat = a_MVPMat;
+        frustum = Frustum(MVPMat);
 
         octree.data.clear();
-
-        MVPMat = camera.getViewProj();
-        frustum = Frustum(MVPMat);
+        imgDims = glm::vec2(img.width, img.height);
 
         TriIndices allIndices(mesh.size());
         for (size_t i = 0; i < mesh.size(); i++)
             allIndices[i] = i;
 
         dfs(0, glm::uvec3(0), allIndices);
-
-        printf("frust %f\n", frustumTime);
-        printf("depth %f\n", depthTime);
-        printf("intersect %f\n", intersectTime);
-
-        /*for (size_t i = 0; i < octree.data.size(); i++) {
-            const auto &node = octree.data[i];
-            printf("%zu %d: ", i, node.isLeaf());
-            for (uint j = 0; j < 8; j++)
-                printf("%u ", node.children[j]);
-            printf("\n");
-        }*/
 
 //        timer.tick();
 //        for (const auto &vox: voxels) {
@@ -69,11 +50,6 @@ struct TreeBuilder {
 //        double colorTime = timer.tick();
 //        printf("color %f\n", colorTime);
     }
-
-
-    double frustumTime;
-    double depthTime;
-    double intersectTime;
 
     // TODO: Optimize first level
     uint32_t dfs(uint level, const glm::uvec3 &vox, const TriIndices &relevant) {
@@ -101,13 +77,11 @@ struct TreeBuilder {
 //                return false;
 //        }
 
-        timer.tick();
 
-        FrustumTest: {
-            if (!frustum.IsBoxVisible(pos, pos + vec3(voxelSize)))
-                return 0;
-        }
-        frustumTime += timer.tick();
+//        FrustumTest: {
+//            if (!frustum.IsBoxVisible(pos, pos + vec3(voxelSize)))
+//                return 0;
+//        }
 
         TriIndices intersection;
 
@@ -121,52 +95,50 @@ struct TreeBuilder {
             if (intersection.empty())
                 return 0;
         }
-        intersectTime += timer.tick();
 
-        DepthTest: {
-            float aabbMinDepth = 1.0f;
-
-            // TexCoord AABB
-            vec2 aabbMin(1);
-            vec2 aabbMax(0);
-
-            for (const auto &offs: VOX_OFFSET) {
-                vec3 P = vec3(vox + offs) * voxelSize;
-                vec4 S = MVPMat * vec4(P, 1.0);
-                S /= S.w;
-
-                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
-
-                aabbMinDepth = min(aabbMinDepth, S.z);
-
-                aabbMin = min(aabbMin, texCoord);
-                aabbMax = max(aabbMax, texCoord);
-            }
-
-            aabbMin = max(aabbMin, vec2(0));
-            aabbMax = min(aabbMax, vec2(1));
-
-            float modelMaxDepth = dbh.queryMaxApprox(aabbMin, aabbMax) * 2 - 1;
-
-            // Resolution test
-            if (modelMaxDepth < 0) {
-                isLeaf = true;
-            }
-
-            if (aabbMinDepth >= modelMaxDepth) {
-//                Log.info({vox, aabbMinDepth, modelMaxDepth, aabbMin, aabbMax});
-                return 0;
-            }
-        }
-
-        depthTime += timer.tick();
+//        DepthTest: {
+//            float aabbMinDepth = 1.0f;
+//
+//            // TexCoord AABB
+//            vec2 aabbMin(1);
+//            vec2 aabbMax(0);
+//
+//            for (const auto &offs: VOX_OFFSET) {
+//                vec3 P = vec3(vox + offs) * voxelSize;
+//                vec4 S = MVPMat * vec4(P, 1.0);
+//                S /= S.w;
+//
+//                vec2 texCoord = (vec2(S.x, S.y) + 1.f) / 2.f;
+//
+//                aabbMinDepth = min(aabbMinDepth, S.z);
+//
+//                aabbMin = min(aabbMin, texCoord);
+//                aabbMax = max(aabbMax, texCoord);
+//            }
+//
+//            aabbMin = max(aabbMin, vec2(0));
+//            aabbMax = min(aabbMax, vec2(1));
+//
+//            float modelMaxDepth = dbh.queryMax(aabbMin, aabbMax) * 2 - 1;
+//
+//            // Resolution test
+//            if (modelMaxDepth < 0) {
+//                isLeaf = true;
+//            }
+//
+//            if (aabbMinDepth >= modelMaxDepth) {
+////                Log.info({vox, aabbMinDepth, modelMaxDepth, aabbMin, aabbMax});
+//                return 0;
+//            }
+//        }
 
         octree.data.emplace_back();
         size_t id = octree.data.size() - 1;
 
         if (!isLeaf) {
             for (uint i = 0; i < VOX_OFFSET.size(); i++) {
-                octree.data[id].children[i] = dfs(level + 1, vox * uint(2) + VOX_OFFSET[i], intersection);
+                uint32_t childAddr = dfs(level + 1, vox * uint(2) + VOX_OFFSET[i], intersection);
+                octree.data[id].children[i] = childAddr == 0 ? 0 : childAddr - id;
             }
         }
 

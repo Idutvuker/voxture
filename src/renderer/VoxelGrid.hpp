@@ -169,7 +169,7 @@ struct VoxelGrid {
             } else {
                 for (uint i = 0; i < node.children.size(); i++) {
                     if (node.children[i] != 0) {
-                        draw(node.children[i], vox * uint(2) + VOX_OFFSET[i], voxelSize / 2.f, level + 1);
+                        draw(id + node.children[i], vox * uint(2) + VOX_OFFSET[i], voxelSize / 2.f, level + 1);
                     }
                 }
             }

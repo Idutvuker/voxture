@@ -6,7 +6,7 @@
 #include "DBH.hpp"
 
 struct App {
-    Bundle bundle {"resources/models/cube.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
+    Bundle bundle {"resources/models/teddy.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
 //    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
 
     GLFWContext context;
@@ -89,12 +89,16 @@ struct App {
     int DBHLevel = 0;
 
     void draw() {
-        if (drawMode == DrawMode::MODEL)
+        if (drawMode == DrawMode::MODEL) {
             model.draw(renderCamera.projection * renderCamera.view);
-        else if (drawMode == DrawMode::VOXELS)
-            voxelGrid.drawOctree(renderCamera, res, treeBuilder.octree);
-        else
+        }
+        else if (drawMode == DrawMode::VOXELS) {
+            if (!octrees.empty())
+                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
+        }
+        else {
             viewPlane.draw();
+        }
     }
 
     void update(float delta) {
@@ -143,8 +147,14 @@ struct App {
 
                 ImGui::SliderInt("Bundle Camera", &bundleCameraID, 0, int(bundle.cameras.size() - 1));
 
-                if (ImGui::Button("Rebuild tree"))
-                    rebuildTree();
+                if (ImGui::Button("Rebuild all trees"))
+                    fullBuild();
+
+                if (ImGui::Button("Save trees"))
+                    saveTrees();
+
+                if (ImGui::Button("Load tree"))
+                    loadTree();
 
                 ImGui::End();
             }
@@ -165,10 +175,7 @@ struct App {
 
     App() = default;
 
-//    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
-    Image<glm::u8vec3> photo {"resources/textures/small.jpg"};
-    DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
-//    DBH dbh {context, 2, 2};
+    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
     TreeBuilder treeBuilder {bundle.mesh, dbh};
 
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
@@ -176,13 +183,40 @@ struct App {
     int bundleCameraID = 0;
 
     void rebuildTree() {
-//        const BundleCamera &cam = bundle.cameras[bundleCameraID];
+        const BundleCamera &cam = bundle.cameras[bundleCameraID];
+        glm::mat4 MVP = cam.camera.getViewProj();
 
-        Timer timer;
-        timer.tick();
-        dbh.update(drawFunc, renderCamera.getViewProj());
-        printf("------\nupdate dbh %f\n", timer.tick());
+        dbh.update(drawFunc, MVP);
+        treeBuilder.buildTree(MVP, cam.photo.value());
+    }
 
-        treeBuilder.buildTree(renderCamera, photo);
+
+    std::vector<Octree> octrees;
+
+    void fullBuild() {
+        octrees.clear();
+
+        for (size_t i = 0; i < bundle.cameras.size(); i++) {
+            printf("Building. %zu/%zu\n", i + 1, bundle.cameras.size());
+
+            const auto &cam = bundle.cameras[i];
+            glm::mat4 MVP = cam.camera.getViewProj();
+
+            dbh.update(drawFunc, MVP);
+            treeBuilder.buildTree(MVP, cam.photo.value());
+
+            octrees.push_back(treeBuilder.octree);
+        }
+    }
+
+    void saveTrees() {
+        octrees.front().saveToDisk("2.tree");
+//        for (size_t i = 0; i < octrees.size(); i++) {
+//            octrees[i].saveToDisk("data_" + std::to_string(i) + ".tree");
+//        }
+    }
+
+    void loadTree() {
+        octrees.emplace_back("2.tree");
     }
 };
