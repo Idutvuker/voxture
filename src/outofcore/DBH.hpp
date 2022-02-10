@@ -143,22 +143,23 @@ struct DBH {
 
         auto res = getMax(0, glm::uvec2(0), from, to);
 
-        Log.info({rangeMin, rangeMax, "visited:", visited});
+//        Log.info({rangeMin, rangeMax, "visited:", visited});
 
         return res;
     }
 
     static int powerOfTwo(uint x) {
+        if (x == 0)
+            return -1;
+
         for (int i = 0; i < 32; i++)
             if (x <= (1 << i))
                 return i;
 
-        return -1;
+        assert (false && "Should be unreachable");
     }
 
     float queryMaxApprox(const glm::vec2 &rangeMin, const glm::vec2 &rangeMax) const {
-        const auto &img = data.front();
-
         using namespace glm;
 
         uvec2 bounds(width - 1, height - 1);
@@ -171,15 +172,40 @@ struct DBH {
 
         uint size = max(diff.x, diff.y);
 
-        uint level = min(uint(powerOfTwo(size) + 1), uint(data.size() - 1));
-        if (level == 0)
-            return 1;   // size is (0, 0)
+        if (size == 0)
+            return -1;
 
-        uvec2 resFrom = from >> level;
+        float res = 0.0;
 
-//        Log.info({from, to, size, level, resFrom, resTo, data[level].width, data[level].height});
+        for (uint x = from.x; x <= to.x; x++) {
+            for (uint y = from.y; y <= to.y; y++) {
+                res = max(res, data.front().get({x, y}));
+            }
+        }
 
-        return data[level].get(resFrom);
+        return res;
+
+//        float approx = data[level].get(resFrom);
+//
+//        //        Log.info({from, to, size});
+//
+//        uint level = min(uint(powerOfTwo(size) + 3), uint(data.size() - 1));
+//
+//        if (level == 0) {
+//            Log.info({"Level ZERO!!", rangeMin, rangeMax, from, to});
+//            return 1;   // size is 0
+//        }
+//
+//        uvec2 resFrom = from >> level;
+//
+//        Log.info({from, to, size, level, resFrom, data[level].width, data[level].height, data[level].get(resFrom)});
+//
+//        assert(approx >= res);
+//        return data[level].get(resFrom);
+    }
+
+    float readPixel(const glm::vec2 &texCoord) const {
+        return data.front().getByTexCoord(texCoord);
     }
 
     void debugLevel(int level) {

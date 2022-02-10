@@ -6,7 +6,8 @@
 #include "DBH.hpp"
 
 struct App {
-    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
+    Bundle bundle {"resources/models/cube.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
+//    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
 
     GLFWContext context;
     Resources res;
@@ -91,7 +92,7 @@ struct App {
         if (drawMode == DrawMode::MODEL)
             model.draw(renderCamera.projection * renderCamera.view);
         else if (drawMode == DrawMode::VOXELS)
-            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels, treeBuilder.colors);
+            voxelGrid.drawOctree(renderCamera, res, treeBuilder.octree);
         else
             viewPlane.draw();
     }
@@ -138,7 +139,7 @@ struct App {
                 if (ImGui::SliderInt("DBH level", &DBHLevel, 0, int(dbh.data.size() - 1)))
                     dbh.debugLevel(DBHLevel);
 
-                ImGui::Text("Voxel count: %zu", treeBuilder.voxels.size());
+                ImGui::Text("Voxel count: %zu", treeBuilder.octree.data.size());
 
                 ImGui::SliderInt("Bundle Camera", &bundleCameraID, 0, int(bundle.cameras.size() - 1));
 
@@ -164,22 +165,24 @@ struct App {
 
     App() = default;
 
-    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
+//    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
+    Image<glm::u8vec3> photo {"resources/textures/small.jpg"};
+    DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+//    DBH dbh {context, 2, 2};
     TreeBuilder treeBuilder {bundle.mesh, dbh};
 
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
 
-
     int bundleCameraID = 0;
 
     void rebuildTree() {
-        const BundleCamera &cam = bundle.cameras[bundleCameraID];
+//        const BundleCamera &cam = bundle.cameras[bundleCameraID];
 
         Timer timer;
         timer.tick();
-        dbh.update(drawFunc, cam.camera.getViewProj());
-        printf("update dbh %f\n", timer.tick());
+        dbh.update(drawFunc, renderCamera.getViewProj());
+        printf("------\nupdate dbh %f\n", timer.tick());
 
-        treeBuilder.buildTree(cam.camera, cam.photo.value());
+        treeBuilder.buildTree(renderCamera, photo);
     }
 };

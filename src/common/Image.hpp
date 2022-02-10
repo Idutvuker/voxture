@@ -32,6 +32,8 @@ struct Image {
     Image(int width, int height, int numChannels=0) : width(width), height(height), numChannels(numChannels), image(width * height) {}
 
     T& get(glm::uvec2 coord) {
+        assert(glm::all(glm::lessThan(coord, {width, height})));
+
         return image[coord.y * width + coord.x];
     }
 
