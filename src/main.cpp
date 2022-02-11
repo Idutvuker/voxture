@@ -16,10 +16,12 @@ int main2() {
 }
 
 #include "outofcore/App.hpp"
+#include "outofcore/Octree.hpp"
 
 int main() {
     App app;
     app.run();
+//    Merger merger();
 
     return 0;
 }

@@ -210,13 +210,13 @@ struct App {
     }
 
     void saveTrees() {
-        octrees.front().saveToDisk("2.tree");
+        octrees.front().saveToDisk("out/teddy.keys");
 //        for (size_t i = 0; i < octrees.size(); i++) {
 //            octrees[i].saveToDisk("data_" + std::to_string(i) + ".tree");
 //        }
     }
 
     void loadTree() {
-        octrees.emplace_back("2.tree");
+        octrees.emplace_back("out/teddy.tree");
     }
 };

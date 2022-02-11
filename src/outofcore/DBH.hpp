@@ -153,7 +153,7 @@ struct DBH {
             return -1;
 
         for (int i = 0; i < 32; i++)
-            if (x <= (1 << i))
+            if (x <= (1u << i))
                 return i;
 
         assert (false && "Should be unreachable");

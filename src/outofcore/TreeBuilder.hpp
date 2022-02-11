@@ -19,7 +19,7 @@ struct TreeBuilder {
     Frustum frustum;
     glm::mat4 MVPMat;
 
-    Octree octree;
+    Octree octree{};
 
     glm::vec2 imgDims;
 
