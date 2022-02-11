@@ -39,7 +39,7 @@ struct Octree {
 
         u64 writeKey = (u64(level) << 61) | key;
 
-        output.write(reinterpret_cast<const char *>(&key), sizeof(key));
+        output.write(reinterpret_cast<const char *>(&writeKey), sizeof(key));
 
         if (level == MAX_LEVEL)
             return;
@@ -81,12 +81,13 @@ struct Keys2Tree {
     using Key = uint64_t;
     using Node = Octree::Node;
     static constexpr u32 MAX_LEVEL = Octree::MAX_LEVEL;
+    static constexpr u64 LEVEL_MASK = 0x1fffffffffffffff;
 
     static bool readKey(std::istream &input, Key *key, u32 *level) {
         Key paired;
         bool result = bool(input.read(reinterpret_cast<char *>(&paired), sizeof(Key)));
 
-        *key = (paired << 3) << 3;
+        *key = paired & LEVEL_MASK;
         *level = paired >> 61;
 
         return result;
@@ -96,8 +97,30 @@ struct Keys2Tree {
         ostream.write(reinterpret_cast<const char*>(&node), sizeof(node));
     }
 
-    static uint findKeyPos(Key key, std::ifstream &input, ) {
-        input.seekg();
+    static u32 findKeyPos(Key key, std::ifstream &input, u32 left, u32 right) {
+        Key cur;
+        u32 level;
+
+        while (right - left > 1) {
+            u32 mid = (left + right) / 2;
+
+            input.seekg(mid * int64_t(sizeof(Key)), std::ios::beg);
+            readKey(input, &cur, &level);
+
+            if (cur < key) {
+                left = mid;
+            } else if (cur > key) {
+                right = mid;
+            } else {
+                return mid;
+            }
+        }
+        input.seekg(left * int64_t(sizeof(Key)), std::ios::beg);
+        readKey(input, &cur, &level);
+
+        if (cur == key)
+            return left;
+
         return 0;
     }
 
@@ -111,20 +134,33 @@ struct Keys2Tree {
         if (!output.is_open())
             throw std::runtime_error("Can not open " + outputFilepath);
 
+        input.seekg(0, std::ios::end);
+        u32 length = input.tellg() / sizeof(Key);
+
+        printf("size %u\n", length);
+
         Key key;
         u32 level;
 
         uint pos = 0;
-        while (readKey(input, &key, &level)) {
+        while (true) {
+
+            input.seekg(pos * int64_t(sizeof(Key)));
+            if (!readKey(input, &key, &level))
+                break;
+
             Node node;
 
             u64 childTreeSize = Octree::fullTreeSize[MAX_LEVEL - level - 1];
             u64 childKey = key + 1;
 
             for (u32 i = 0; i < 8; i++) {
-                node.children[i] = findKeyPos(childKey) - pos;
+                u32 childPos = findKeyPos(childKey, input, pos + 1, length);
+                node.children[i] = childPos != 0 ? childPos - pos : 0;
                 childKey += childTreeSize;
             }
+
+            output.write(reinterpret_cast<const char*>(&node), sizeof(node));
 
             pos += 1;
         }

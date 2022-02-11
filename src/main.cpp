@@ -21,7 +21,14 @@ int main2() {
 int main() {
     App app;
     app.run();
-//    Merger merger();
+
+    Keys2Tree::convert("out/teddy.keys", "out/teddy.tree");
+
+//    uint64_t x = 160842843834661;
+//    printf("%zu\n", (x << 3) >> 3);
+
+
+    //    Merger merger();
 
     return 0;
 }
