@@ -6,7 +6,9 @@
 #include "DBH.hpp"
 
 struct App {
-    Bundle bundle {"resources/models/teddy.obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
+    std::string modelName = "teddy";
+
+    Bundle bundle {"resources/models/"+modelName+".obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
 //    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
 
     GLFWContext context;
@@ -210,13 +212,18 @@ struct App {
     }
 
     void saveTrees() {
-        octrees.front().saveToDisk("out/teddy.keys");
+        DiskKeys::Saver(octrees.front(), "out/" + modelName + ".keys").save();
+
 //        for (size_t i = 0; i < octrees.size(); i++) {
-//            octrees[i].saveToDisk("data_" + std::to_string(i) + ".tree");
+//            octrees[i].saveKeysToDisk("data_" + std::to_string(i) + ".tree");
 //        }
     }
 
     void loadTree() {
-        octrees.emplace_back("out/teddy.tree");
+        std::string fileFrom = "join";
+
+//        DiskKeys::Converter::convert("out/"+fileFrom+".keys", "out/"+fileFrom+".tree");
+        octrees.clear();
+        octrees.emplace_back("out/"+fileFrom+".tree");
     }
 };

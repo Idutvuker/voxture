@@ -19,16 +19,11 @@ int main2() {
 #include "outofcore/Octree.hpp"
 
 int main() {
+    DiskKeys::Merger::merge("out/teddy.keys", "out/cow.keys", "out/join.keys");
+    DiskKeys::Converter::convert("out/join.keys", "out/join.tree");
+
     App app;
     app.run();
-
-    Keys2Tree::convert("out/teddy.keys", "out/teddy.tree");
-
-//    uint64_t x = 160842843834661;
-//    printf("%zu\n", (x << 3) >> 3);
-
-
-    //    Merger merger();
 
     return 0;
 }
