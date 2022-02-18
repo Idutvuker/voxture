@@ -99,7 +99,8 @@ struct App {
             model.draw(renderCamera.projection * renderCamera.view);
         }
         else if (drawMode == DrawMode::VOXELS) {
-            debugDraw.drawPoints(renderCamera, res, treeBuilder.points);
+            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
+//            debugDraw.drawPoints(renderCamera, res, treeBuilder.points);
 //            if (!octrees.empty())
 //                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
         }

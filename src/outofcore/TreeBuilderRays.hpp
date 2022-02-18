@@ -7,12 +7,12 @@ struct TreeBuilderRays {
     const DBH &dbh;
     explicit TreeBuilderRays(const std::vector<Triangle> &_mesh, const DBH &_dbh): mesh(_mesh), dbh(_dbh) {}
 
-    uint maxLevel = 10;
+    uint maxLevel = 7;
 
     std::vector<glm::uvec3> voxels;
     std::vector<glm::vec3> points;
 
-    void buildTree(const Camera &camera, float focalLength) {
+    void buildTree(const Camera &camera, float) {
         using namespace glm;
 
         voxels.clear();
@@ -26,8 +26,8 @@ struct TreeBuilderRays {
 
         const auto &img = dbh.data.front();
 
-        for (int y = 0; y < img.height; y++) {
-            for (int x = 0; x < img.width; x++) {
+        for (int y = 0; y < img.height; y += 5) {
+            for (int x = 0; x < img.width; x += 5) {
                 float depthNDC = img.get({x, y}) * 2 - 1;
 
                 if (depthNDC == 1)
@@ -38,9 +38,27 @@ struct TreeBuilderRays {
                 vec4 P = invViewProj * S;
 
                 vec3 point(P / P.w);
+                if (!all(lessThan(point, vec3(1))))
+                    continue;
+
                 points.push_back(point);
 
-                float pointSize = 0.5f * (Camera::linearizeDepthNDC(depthNDC) / focalLength);
+//                float pointSize = Camera::linearizeDepthNDC(depthNDC) / focalLength;
+//
+//                uint level = 0;
+//                float levelVoxelSize = 1;
+//                while (level < maxLevel) {
+//                    if (levelVoxelSize <= pointSize)
+//                        break;
+//
+//                    level += 1;
+//                    levelVoxelSize /= 2;
+//                }
+
+                uint level = maxLevel;
+                uvec3 voxel = point * float(1 << level);
+                voxels.push_back(voxel);
+
 //                Log.info({x, y, Camera::linearizeDepthNDC(depthNDC), point, pointSize});
             }
         }
