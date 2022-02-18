@@ -19,8 +19,8 @@ int main2() {
 #include "outofcore/Octree.hpp"
 
 int main() {
-    DiskKeys::Merger::merge("out/teddy.keys", "out/cow.keys", "out/join.keys");
-    DiskKeys::Converter::convert("out/join.keys", "out/join.tree");
+//    DiskKeys::Merger::merge("out/teddy.keys", "out/cow.keys", "out/join.keys");
+//    DiskKeys::Converter::convert("out/join.keys", "out/join.tree");
 
     App app;
     app.run();

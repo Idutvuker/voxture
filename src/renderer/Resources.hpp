@@ -4,6 +4,7 @@
 #include "../common/Image.hpp"
 
 struct Resources {
+//    ShaderProgram pointSP = ShaderProgram("resources/shaders/model.vert.glsl", "resources/shaders/point.frag.glsl");
     ShaderProgram voxelSP = ShaderProgram("resources/shaders/voxel.vert.glsl", "resources/shaders/voxel.frag.glsl");
     ShaderProgram modelSP = ShaderProgram("resources/shaders/model.vert.glsl", "resources/shaders/model.frag.glsl");
     ShaderProgram imageSP = ShaderProgram("resources/shaders/image.vert.glsl", "resources/shaders/image.frag.glsl");

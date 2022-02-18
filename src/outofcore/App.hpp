@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../renderer/VoxelGrid.hpp"
-#include "TreeBuilder.hpp"
+#include "../renderer/DebugDraw.hpp"
+#include "TreeBuilderRays.hpp"
 
 #include "DBH.hpp"
 
@@ -90,13 +91,17 @@ struct App {
     int maxLevelWrapper = 0;
     int DBHLevel = 0;
 
+    DebugDraw debugDraw {};
+//    std::vector<glm::vec3> points = {{0, 0, 0}, {0.2, 0.2, 0.2}, {0.3, 0.3, 0.3}, {0, 0.5, 0}};
+
     void draw() {
         if (drawMode == DrawMode::MODEL) {
             model.draw(renderCamera.projection * renderCamera.view);
         }
         else if (drawMode == DrawMode::VOXELS) {
-            if (!octrees.empty())
-                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
+            debugDraw.drawPoints(renderCamera, res, treeBuilder.points);
+//            if (!octrees.empty())
+//                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
         }
         else {
             viewPlane.draw();
@@ -145,7 +150,7 @@ struct App {
                 if (ImGui::SliderInt("DBH level", &DBHLevel, 0, int(dbh.data.size() - 1)))
                     dbh.debugLevel(DBHLevel);
 
-                ImGui::Text("Voxel count: %zu", treeBuilder.octree.data.size());
+                ImGui::Text("Voxel count: %zu", treeBuilder.voxels.size());
 
                 ImGui::SliderInt("Bundle Camera", &bundleCameraID, 0, int(bundle.cameras.size() - 1));
 
@@ -177,21 +182,12 @@ struct App {
 
     App() = default;
 
-    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
-    TreeBuilder treeBuilder {bundle.mesh, dbh};
+    DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+    TreeBuilderRays treeBuilder {bundle.mesh, dbh};
 
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
 
     int bundleCameraID = 0;
-
-    void rebuildTree() {
-        const BundleCamera &cam = bundle.cameras[bundleCameraID];
-        glm::mat4 MVP = cam.camera.getViewProj();
-
-        dbh.update(drawFunc, MVP);
-        treeBuilder.buildTree(MVP, cam.photo.value());
-    }
-
 
     std::vector<Octree> octrees;
 
@@ -201,18 +197,20 @@ struct App {
         for (size_t i = 0; i < bundle.cameras.size(); i++) {
             printf("Building. %zu/%zu\n", i + 1, bundle.cameras.size());
 
-            const auto &cam = bundle.cameras[i];
-            glm::mat4 MVP = cam.camera.getViewProj();
+            const auto &cam = renderCamera;
 
-            dbh.update(drawFunc, MVP);
-            treeBuilder.buildTree(MVP, cam.photo.value());
+            dbh.update(drawFunc, cam.getViewProj());
 
-            octrees.push_back(treeBuilder.octree);
+            float focalLength = float(dbh.data.front().height) / 2.f / tanf(glm::radians(cam.FOV) / 2);
+            Log.info({"Focal length is ", focalLength});
+            treeBuilder.buildTree(cam, focalLength);
+
+//            octrees.push_back(treeBuilder.octree);
         }
     }
 
     void saveTrees() {
-        DiskKeys::Saver(octrees.front(), "out/" + modelName + ".keys").save();
+//        DiskKeys::Saver(octrees.front(), "out/" + modelName + ".keys").save();
 
 //        for (size_t i = 0; i < octrees.size(); i++) {
 //            octrees[i].saveKeysToDisk("data_" + std::to_string(i) + ".tree");
