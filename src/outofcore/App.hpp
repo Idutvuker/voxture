@@ -99,7 +99,8 @@ struct App {
             model.draw(renderCamera.projection * renderCamera.view);
         }
         else if (drawMode == DrawMode::VOXELS) {
-            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
+            voxelGrid.drawOctree(renderCamera, res, treeBuilder.octree);
+//            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
 //            debugDraw.drawPoints(renderCamera, res, treeBuilder.points);
 //            if (!octrees.empty())
 //                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
@@ -151,7 +152,7 @@ struct App {
                 if (ImGui::SliderInt("DBH level", &DBHLevel, 0, int(dbh.data.size() - 1)))
                     dbh.debugLevel(DBHLevel);
 
-                ImGui::Text("Voxel count: %zu", treeBuilder.voxels.size());
+                ImGui::Text("Voxel count: %zu", treeBuilder.octree.data.size());
 
                 ImGui::SliderInt("Bundle Camera", &bundleCameraID, 0, int(bundle.cameras.size() - 1));
 
@@ -184,6 +185,7 @@ struct App {
     App() = default;
 
     DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
+//    DBH dbh {context, 100, 100};
     TreeBuilderRays treeBuilder {bundle.mesh, dbh};
 
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
@@ -203,7 +205,6 @@ struct App {
             dbh.update(drawFunc, cam.getViewProj());
 
             float focalLength = float(dbh.data.front().height) / 2.f / tanf(glm::radians(cam.FOV) / 2);
-            Log.info({"Focal length is ", focalLength});
             treeBuilder.buildTree(cam, focalLength);
 
 //            octrees.push_back(treeBuilder.octree);
