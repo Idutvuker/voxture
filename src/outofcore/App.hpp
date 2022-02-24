@@ -7,7 +7,7 @@
 #include "DBH.hpp"
 
 struct App {
-    std::string modelName = "teddy";
+    std::string modelName = "cow";
 
     Bundle bundle {"resources/models/"+modelName+".obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
 //    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
@@ -212,6 +212,8 @@ struct App {
     }
 
     void saveTrees() {
+        DiskTree::save(treeBuilder.octree, "out2/cow.tree");
+
 //        DiskKeys::Saver(octrees.front(), "out/" + modelName + ".keys").save();
 
 //        for (size_t i = 0; i < octrees.size(); i++) {
@@ -220,10 +222,11 @@ struct App {
     }
 
     void loadTree() {
-        std::string fileFrom = "join";
-
-//        DiskKeys::Converter::convert("out/"+fileFrom+".keys", "out/"+fileFrom+".tree");
-        octrees.clear();
-        octrees.emplace_back("out/"+fileFrom+".tree");
+//        std::string fileFrom = "join";
+//
+////        DiskKeys::Converter::convert("out/"+fileFrom+".keys", "out/"+fileFrom+".tree");
+//        octrees.clear();
+//        octrees.emplace_back("out2/teddy.tree");
+        treeBuilder.octree = Octree("out3/join.tree");
     }
 };

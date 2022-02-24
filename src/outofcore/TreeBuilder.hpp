@@ -145,4 +145,52 @@ struct TreeBuilder {
         return id;
     }
 
+    static Octree fullVoxelization(const std::vector<Triangle> &mesh, uint maxLevel) {
+        Octree octree;
+
+        TriIndices allIndices(mesh.size());
+        for (size_t i = 0; i < mesh.size(); i++)
+            allIndices[i] = i;
+
+        dfsFull(0, glm::uvec3(0), allIndices, mesh, octree, maxLevel);
+
+        return octree;
+    }
+
+    static uint32_t dfsFull(uint level, const glm::uvec3 &vox, const TriIndices &relevant, const std::vector<Triangle> &mesh, Octree &octree, uint maxLevel) {
+        using namespace glm;
+
+        assert (level <= maxLevel);
+
+        const float voxelSize = 1.f / float(1 << level);
+        vec3 pos = vec3(vox) * voxelSize;
+
+        bool isLeaf = level == maxLevel;
+
+        TriIndices intersection;
+
+        IntersectionTest: {
+            for (const auto &triId: relevant) {
+                if (intersect::triCubeOverlap(pos, voxelSize, mesh[triId])) {
+                    intersection.push_back(triId);
+                }
+            }
+
+            if (intersection.empty())
+                return 0;
+        }
+
+        octree.data.emplace_back();
+        size_t id = octree.data.size() - 1;
+
+        if (!isLeaf) {
+            for (uint i = 0; i < VOX_OFFSET.size(); i++) {
+                uint32_t childAddr = dfsFull(level + 1, vox * uint(2) + VOX_OFFSET[i], intersection, mesh, octree, maxLevel);
+                octree.data[id].children[i] = childAddr == 0 ? 0 : childAddr - id;
+            }
+        }
+
+        return id;
+    }
+
 };

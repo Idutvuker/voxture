@@ -8,7 +8,7 @@ struct TreeBuilderRays {
     const DBH &dbh;
     explicit TreeBuilderRays(const std::vector<Triangle> &_mesh, const DBH &_dbh): mesh(_mesh), dbh(_dbh) {}
 
-    uint maxLevel = 10;
+    uint maxLevel = 5;
 
 //    struct Voxel {
 //        glm::uvec3 pos;
