@@ -270,8 +270,6 @@ struct DiskKeys {
 
 struct DiskTree {
     using u32 = uint32_t;
-    using u64 = uint64_t;
-    using Key = uint64_t;
     using Node = Octree::Node;
 
     struct Saver {
@@ -308,12 +306,14 @@ struct DiskTree {
 
     struct Merger {
         struct OctreeLoader {
-            const Octree octree;
+            std::ifstream input;
 
-            explicit OctreeLoader(const std::string &filepath) : octree(filepath) {}
+            explicit OctreeLoader(const std::string &filepath) : input(filepath, std::ios::in | std::ios::binary) {}
 
-            Node getNode(u32 id) const {
-                return octree.data[id];
+            Node getNode() {
+                Node node;
+                input.read(reinterpret_cast<char *>(&node), sizeof(Node));
+                return node;
             }
         };
 
@@ -333,10 +333,10 @@ struct DiskTree {
         }
 
 
-        u32 writeSubtree(const OctreeLoader &tree, u32 id) {
+        u32 writeSubtree(OctreeLoader &tree, u32 id) {
             assert(id != 0);
 
-            const Node &node = tree.getNode(id);
+            const Node &node = tree.getNode();
             output.write(reinterpret_cast<const char *>(&node), sizeof(Node));
 
             u32 treeSize = 1;
@@ -350,8 +350,8 @@ struct DiskTree {
 
 
         u32 merge(u32 id1, u32 id2, u32 pos) {
-            const Node &node1 = tree1.getNode(id1);
-            const Node &node2 = tree2.getNode(id2);
+            const Node &node1 = tree1.getNode();
+            const Node &node2 = tree2.getNode();
 
             Node mergedNode{};
             u32 treeSize = 1;
