@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "../renderer/GLFWContext.hpp"
 
 // Depth Buffer Hierarchy
 struct DBH {
@@ -31,7 +32,7 @@ struct DBH {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void update(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4& MVPMat) {
+    Image<float> calcDepthMap(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4& MVPMat) {
         glViewport(0, 0, width, height);
         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -41,10 +42,16 @@ struct DBH {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, context.WINDOW_WIDTH, context.WINDOW_HEIGHT);
 
-        data.clear();
-        data.emplace_back(width, height);
+        Image<float> depthMap(width, height);
 
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, data.back().image.data());
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthMap.image.data());
+
+        return depthMap;
+    }
+
+    void update(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4& MVPMat) {
+        data.clear();
+        data.push_back(calcDepthMap(drawFunc, MVPMat));
 
         int curWidth = (width + 1) / 2;
         int curHeight = (height + 1) / 2;

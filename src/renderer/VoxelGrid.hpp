@@ -4,7 +4,6 @@
 #include "../geom/Triangle.hpp"
 #include "../geom/Camera.hpp"
 #include "ShaderProgram.hpp"
-#include "Renderer.hpp"
 #include "../geom/voxelizer.hpp"
 #include "../util/Logger.hpp"
 #include "Resources.hpp"
@@ -160,7 +159,8 @@ struct VoxelGrid {
 
                 glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
 
-                vec3 color3f = fract(pos * voxelSize * 13643.3545f);
+//                vec3 color3f = fract(pos * voxelSize * 13643.3545f);
+                vec3 color3f = vec3(node.color >> 16, (node.color >> 8) & 0xff, (node.color) & 0xff) / 255.f;
                 glUniform3fv(ColorLoc, 1, value_ptr(color3f));
 
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);

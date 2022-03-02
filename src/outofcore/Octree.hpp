@@ -7,6 +7,7 @@ struct Octree {
 
     struct Node {
         std::array<u32, 8> children{};
+        u32 color = 0;
 
         bool isLeaf() const {
             for (const auto &child: children)
@@ -18,6 +19,8 @@ struct Octree {
 
         Node() = default;
     };
+
+    static_assert(sizeof(Node) == 36);
 
     std::vector<Node> data;
 
@@ -307,13 +310,23 @@ struct DiskTree {
     struct Merger {
         struct OctreeLoader {
             std::ifstream input;
+            Octree octree;
 
-            explicit OctreeLoader(const std::string &filepath) : input(filepath, std::ios::in | std::ios::binary) {}
+//            explicit OctreeLoader(const std::string &filepath) : input(filepath, std::ios::in | std::ios::binary) {}
 
+//            Node getNode() {
+//                Node node;
+//                input.read(reinterpret_cast<char *>(&node), sizeof(Node));
+//                return node;
+//            }
+
+            explicit OctreeLoader(const std::string &filepath) : octree(filepath) {}
+
+            size_t i = 0;
             Node getNode() {
-                Node node;
-                input.read(reinterpret_cast<char *>(&node), sizeof(Node));
-                return node;
+                auto res = octree.data[i];
+                i++;
+                return res;
             }
         };
 
@@ -354,10 +367,11 @@ struct DiskTree {
             const Node &node2 = tree2.getNode();
 
             Node mergedNode{};
+            mergedNode.color = node1.color;
+
             u32 treeSize = 1;
 
             auto writePos = output.tellp();
-
             output.write(reinterpret_cast<const char *>(&mergedNode), sizeof(Node)); // Useless write, maybe change to seekp
 
             for (uint i = 0; i < 8; i++) {
@@ -369,7 +383,6 @@ struct DiskTree {
                 if (t1child == 0 && t2child == 0)
                     continue;
 
-//                output.seekp(int64_t((pos + treeSize) * sizeof(Node)));
                 if (t1child == 0)
                     subTreeSize = writeSubtree(tree2, id2 + t2child);
                 else if (t2child == 0)
@@ -384,7 +397,6 @@ struct DiskTree {
             auto end = output.tellp();
 
             output.seekp(writePos);
-//            output.seekp(int64_t(pos * sizeof(Node)));
             output.write(reinterpret_cast<const char *>(&mergedNode), sizeof(Node));
 
             output.seekp(end);

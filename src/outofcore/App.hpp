@@ -5,12 +5,11 @@
 #include "TreeBuilderRays.hpp"
 
 #include "DBH.hpp"
+#include "../renderer/RenderCamera.hpp"
+#include "../renderer/OrbitCameraController.hpp"
 
 struct App {
-    std::string modelName = "cow";
-
-    Bundle bundle {"resources/models/"+modelName+".obj", "resources/testBundle/cameras.out", "resources/testBundle/list.txt"};
-//    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
+    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
 
     GLFWContext context;
     Resources res;
@@ -99,11 +98,11 @@ struct App {
             model.draw(renderCamera.projection * renderCamera.view);
         }
         else if (drawMode == DrawMode::VOXELS) {
-            voxelGrid.drawOctree(renderCamera, res, treeBuilder.octree);
+//            voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
 //            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
 //            debugDraw.drawPoints(renderCamera, res, treeBuilder.points);
-//            if (!octrees.empty())
-//                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
+            if (!octrees.empty())
+                voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
         }
         else {
             viewPlane.draw();
@@ -152,15 +151,12 @@ struct App {
                 if (ImGui::SliderInt("DBH level", &DBHLevel, 0, int(dbh.data.size() - 1)))
                     dbh.debugLevel(DBHLevel);
 
-                ImGui::Text("Voxel count: %zu", treeBuilder.octree.data.size());
+//                ImGui::Text("Voxel count: %zu", treeBuilder.octree.data.size());
 
                 ImGui::SliderInt("Bundle Camera", &bundleCameraID, 0, int(bundle.cameras.size() - 1));
 
                 if (ImGui::Button("Rebuild all trees"))
                     fullBuild();
-
-                if (ImGui::Button("Save trees"))
-                    saveTrees();
 
                 if (ImGui::Button("Load tree"))
                     loadTree();
@@ -184,49 +180,36 @@ struct App {
 
     App() = default;
 
-    DBH dbh {context, context.WINDOW_WIDTH, context.WINDOW_HEIGHT};
-//    DBH dbh {context, 100, 100};
-    TreeBuilderRays treeBuilder {bundle.mesh, dbh};
+    DBH dbh {context, bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
+    TreeBuilderRays treeBuilder {bundle.mesh};
 
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
 
     int bundleCameraID = 0;
-
     std::vector<Octree> octrees;
 
     void fullBuild() {
-        octrees.clear();
-
         for (size_t i = 0; i < bundle.cameras.size(); i++) {
-            printf("Building. %zu/%zu\n", i + 1, bundle.cameras.size());
+            printf("\rBuilding octrees %zu/%zu", i + 1, bundle.cameras.size());
+            fflush(stdout);
 
-            const auto &cam = renderCamera;
+            const auto &cam = bundle.cameras[i];
+            auto MVP = cam.camera.getViewProj();
+            float focalLength = cam.focalLength;
 
-            dbh.update(drawFunc, cam.getViewProj());
+            auto depthMap = dbh.calcDepthMap(drawFunc, MVP);
+            const auto &photo = bundle.cameras[i].photo.value();
 
-            float focalLength = float(dbh.data.front().height) / 2.f / tanf(glm::radians(cam.FOV) / 2);
-            treeBuilder.buildTree(cam, focalLength);
-
-//            octrees.push_back(treeBuilder.octree);
+            auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
+//            DiskTree::save(octree, "out4/" + std::to_string(i) + ".tree");
+//            DiskKeys::Saver(octree, "out5/" + std::to_string(i) + ".keys").save();
         }
-    }
 
-    void saveTrees() {
-        DiskTree::save(treeBuilder.octree, "out2/cow.tree");
-
-//        DiskKeys::Saver(octrees.front(), "out/" + modelName + ".keys").save();
-
-//        for (size_t i = 0; i < octrees.size(); i++) {
-//            octrees[i].saveKeysToDisk("data_" + std::to_string(i) + ".tree");
-//        }
+        printf("\rBuilding octrees done!\n");
     }
 
     void loadTree() {
-//        std::string fileFrom = "join";
-//
-////        DiskKeys::Converter::convert("out/"+fileFrom+".keys", "out/"+fileFrom+".tree");
-//        octrees.clear();
-//        octrees.emplace_back("out2/teddy.tree");
-        treeBuilder.octree = Octree("out3/join.tree");
+        octrees.clear();
+        octrees.emplace_back("finalOut/join_31.tree");
     }
 };

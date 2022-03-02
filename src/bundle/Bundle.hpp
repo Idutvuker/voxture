@@ -83,7 +83,7 @@ struct Bundle {
             std::string imgName;
             filestream >> imgName;
 
-            camera.photo.emplace(imgDir / imgName);
+//            camera.photo.emplace(imgDir / imgName);
 
             float fovY = atan2f(float(camera.photo->height) / 2, camera.focalLength) * 2;
 

@@ -5,58 +5,40 @@
 
 struct TreeBuilderRays {
     const std::vector<Triangle> &mesh;
-    const DBH &dbh;
-    explicit TreeBuilderRays(const std::vector<Triangle> &_mesh, const DBH &_dbh): mesh(_mesh), dbh(_dbh) {}
+    explicit TreeBuilderRays(const std::vector<Triangle> &_mesh): mesh(_mesh) {}
 
-    uint maxLevel = 5;
-
-//    struct Voxel {
-//        glm::uvec3 pos;
-//        uint level;
-//        bool operator==(const Voxel &other) const = default;
-//    };
-//
-//    struct VoxelHash {
-//        size_t operator()(const Voxel &voxel) const {
-//            return (size_t(voxel.level) << 60) & (size_t(voxel.pos.x) << 32) & (size_t(voxel.pos.y) << 16) & (size_t(voxel.pos.z));
-//        }
-//    };
-//
-//    std::unordered_set<Voxel, VoxelHash> voxelSet;
-
-    /// Stores child addresses instead of offsets
-    /// Not ordered
-    Octree tmpOctree;
-
-    Octree octree;
+    uint maxLevel = 10;
 
     std::vector<glm::vec3> points;
 
-    void buildTree(const Camera &camera, float focalLength) {
+    Octree buildTree(const glm::mat4 &viewProjMat, float focalLength, const Image<float> &depthMap, const Image<glm::u8vec3> &photo) {
+        assert(depthMap.width == photo.width && depthMap.height == photo.height);
+
+        Octree octree;
+
+        // Stores child addresses instead of offsets
+        // Not ordered
+        Octree tmpOctree;
+
         using namespace glm;
 
-//        voxelSet.clear();
         points.clear();
 
         tmpOctree.data.clear();
+        tmpOctree.data.reserve(photo.width * photo.height * 2);
+
         tmpOctree.data.emplace_back();
 
-        mat4 invViewProj = inverse(camera.getViewProj());
+        mat4 invViewProj = inverse(viewProjMat);
 
-        vec4 s = vec4(0, 0, -1, 1);
-        vec4 p = invViewProj * s;
-        p /= p.w;
-
-        const auto &img = dbh.data.front();
-
-        for (int y = 0; y < img.height; y += 1) {
-            for (int x = 0; x < img.width; x += 1) {
-                float depthNDC = img.get({x, y}) * 2 - 1;
+        for (int y = 0; y < depthMap.height; y++) {
+            for (int x = 0; x < depthMap.width; x++) {
+                float depthNDC = depthMap.get({x, y}) * 2 - 1;
 
                 if (depthNDC == 1)
                     continue;
 
-                vec2 texCoord = (vec2(x, y) + 0.5f) / vec2(img.width, img.height) * 2.f - 1.f;
+                vec2 texCoord = (vec2(x, y) + 0.5f) / vec2(depthMap.width, depthMap.height) * 2.f - 1.f;
                 vec4 S = vec4(texCoord.x, texCoord.y, depthNDC, 1);
                 vec4 P = invViewProj * S;
 
@@ -76,6 +58,9 @@ struct TreeBuilderRays {
 
                 uint curPtr = 0;
 
+                u8vec3 colorVec = photo.get({x, photo.height - y});
+                u32 color = (colorVec.r << 16) | (colorVec.g << 8) | colorVec.b;
+
                 while (level < maxLevel) {
                     if (levelVoxelSize <= pointSize)
                         break;
@@ -94,6 +79,7 @@ struct TreeBuilderRays {
                     if (childPtr == 0) {
                         childPtr = tmpOctree.data.size();
                         tmpOctree.data.emplace_back();
+                        tmpOctree.data.back().color = color;
 
                         tmpOctree.data[curPtr].children[child] = childPtr;
                     }
@@ -101,63 +87,32 @@ struct TreeBuilderRays {
                     curVox = nextVox;
                     curPtr = childPtr;
                 }
-
-
-//                uint level = maxLevel;
-//                uvec3 voxel = point * float(1 << level);
-
-//                voxelSet.insert({voxel, level});
-//
-//                while (level != 0) {
-//                    level--;
-//                    voxel /= 2;
-//                    voxelSet.insert({voxel, level});
-//                }
-
-//                voxels.push_back(voxel);
-
-//                Log.info({x, y, Camera::linearizeDepthNDC(depthNDC), point, pointSize});
             }
         }
 
         octree.data.clear();
+        octree.data.reserve(tmpOctree.data.size());
 
-        dfs(0);
+        if (!tmpOctree.data.empty())
+            dfs(0, tmpOctree, octree);
 
-//        Log.info({"Building octree"});
-//
-//        octree.data.clear();
-//
-//        dfs(0, {0, 0, 0});
+        return octree;
     }
 
-    uint32_t dfs(uint32_t v) {
+    static uint32_t dfs(uint32_t v, const Octree &tmpOctree, Octree &octree) {
+        const auto &tmpNode = tmpOctree.data[v];
+
         uint32_t id = octree.data.size();
         octree.data.emplace_back();
+        octree.data.back().color = tmpNode.color;
 
         for (uint i = 0; i < 8; i++) {
-            auto childAddr = tmpOctree.data[v].children[i];
-            if (childAddr != 0)
-                octree.data[id].children[i] = dfs(childAddr) - id;
+            auto childAddr = tmpNode.children[i];
+            if (childAddr != 0) {
+                octree.data[id].children[i] = dfs(childAddr, tmpOctree, octree) - id;
+            }
         }
 
         return id;
     }
-
-    /*uint32_t dfs(uint level, glm::uvec3 pos) {
-        Voxel vox{pos, level};
-
-        if (!voxelSet.contains(vox))
-            return 0;
-
-        octree.data.emplace_back();
-        auto id = octree.data.size() - 1;
-
-        for (uint i = 0; i < VOX_OFFSET.size(); i++) {
-            auto childAddr = dfs(level + 1, pos * uint(2) + VOX_OFFSET[i]);
-            octree.data[id].children[i] = childAddr == 0 ? 0 : childAddr - id;
-        }
-
-        return id;
-    }*/
 };

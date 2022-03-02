@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "../common/constants.hpp"
 
 struct Camera {
     glm::mat4 view = glm::mat4(1);
