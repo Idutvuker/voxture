@@ -74,22 +74,22 @@ void main() {
     const uint gridSize = 1 << MAX_LEVEL;
 
     const uvec3 baseVox = uvec3(fPos * gridSize);
-    vec3 color = sampleOctree(baseVox);
+//    vec3 color = sampleOctree(baseVox);
 
-//    const vec3 voxFract = fract(fPos * gridSize);
-//
-//    vec3 colors[8];
-//    for (int i = 0; i < 8; i++)
-//        colors[i] = sampleOctree(baseVox + VOX_OFFSET[i]);
-//
-//    vec3 xLerp[4];
-//    for (int i = 0; i < 4; i++)
-//        xLerp[i] = mix(colors[i], colors[i + 4], voxFract.x);
-//
-//    vec3 yLerp0 = mix(xLerp[0], xLerp[2], voxFract.y);
-//    vec3 yLerp1 = mix(xLerp[1], xLerp[3], voxFract.y);
-//
-//    vec3 color = mix(yLerp0, yLerp1, voxFract.z);
+    const vec3 voxFract = fract(fPos * gridSize);
+
+    vec3 colors[8];
+    for (int i = 0; i < 8; i++)
+        colors[i] = sampleOctree(baseVox + VOX_OFFSET[i]);
+
+    vec3 xLerp[4];
+    for (int i = 0; i < 4; i++)
+        xLerp[i] = mix(colors[i], colors[i + 4], voxFract.x);
+
+    vec3 yLerp0 = mix(xLerp[0], xLerp[2], voxFract.y);
+    vec3 yLerp1 = mix(xLerp[1], xLerp[3], voxFract.y);
+
+    vec3 color = mix(yLerp0, yLerp1, voxFract.z);
 
     FragColor = vec4(color, 1.0);
 }

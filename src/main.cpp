@@ -62,7 +62,7 @@ void buildFull() {
 }
 
 int main() {
-//    compareTimes();
+    compareTimes();
 
 //    buildFull();
 

@@ -312,27 +312,30 @@ struct DiskTree {
             std::ifstream input;
             Octree octree;
 
-//            explicit OctreeLoader(const std::string &filepath) : input(filepath, std::ios::in | std::ios::binary) {}
+            explicit OctreeLoader(const std::string &filepath) : input(filepath, std::ios::in | std::ios::binary) {}
 
-//            Node getNode() {
-//                Node node;
-//                input.read(reinterpret_cast<char *>(&node), sizeof(Node));
-//                return node;
-//            }
-
-            explicit OctreeLoader(const std::string &filepath) : octree(filepath) {}
-
-            size_t i = 0;
             Node getNode() {
-                auto res = octree.data[i];
-                i++;
-                return res;
+                Node node;
+                input.read(reinterpret_cast<char *>(&node), sizeof(Node));
+                return node;
             }
+
+//            explicit OctreeLoader(const std::string &filepath) : octree(filepath) {}
+//
+//            size_t i = 0;
+//            Node getNode() {
+//                auto res = octree.data[i];
+//                i++;
+//                return res;
+//            }
         };
 
         OctreeLoader tree1;
         OctreeLoader tree2;
         std::ofstream output;
+
+        Octree buffer;
+        uint bufferLevelThreshold = 3;
 
         Merger(const std::string &filepath1, const std::string &filepath2, const std::string &outputFilepath) :
                 tree1(filepath1),
@@ -342,27 +345,31 @@ struct DiskTree {
             if (!output.is_open())
                 throw std::runtime_error("Can not open " + outputFilepath);
 
-            merge(0, 0, 0);
+            merge(0, 0, 0, 0);
         }
 
 
-        u32 writeSubtree(OctreeLoader &tree, u32 id) {
+        u32 writeSubtree(OctreeLoader &tree, u32 id, u32 level) {
             assert(id != 0);
 
             const Node &node = tree.getNode();
-            output.write(reinterpret_cast<const char *>(&node), sizeof(Node));
+
+            if (level < bufferLevelThreshold)
+                output.write(reinterpret_cast<const char *>(&node), sizeof(Node));
+            else
+                buffer.data.push_back(node);
 
             u32 treeSize = 1;
 
             for (u32 child: node.children)
                 if (child != 0)
-                    treeSize += writeSubtree(tree, id + child);
+                    treeSize += writeSubtree(tree, id + child, level + 1);
 
             return treeSize;
         }
 
 
-        u32 merge(u32 id1, u32 id2, u32 pos) {
+        u32 merge(u32 id1, u32 id2, u32 pos, u32 level) {
             const Node &node1 = tree1.getNode();
             const Node &node2 = tree2.getNode();
 
@@ -371,8 +378,14 @@ struct DiskTree {
 
             u32 treeSize = 1;
 
-            auto writePos = output.tellp();
-            output.write(reinterpret_cast<const char *>(&mergedNode), sizeof(Node)); // Useless write, maybe change to seekp
+            int64_t writePos;
+            if (level < bufferLevelThreshold) {
+                writePos = output.tellp();
+                output.write(reinterpret_cast<const char *>(&mergedNode), sizeof(Node)); // Useless write, maybe change to seekp
+            } else {
+                writePos = int64_t(buffer.data.size());
+                buffer.data.emplace_back();
+            }
 
             for (uint i = 0; i < 8; i++) {
                 u32 t1child = node1.children[i];
@@ -384,22 +397,32 @@ struct DiskTree {
                     continue;
 
                 if (t1child == 0)
-                    subTreeSize = writeSubtree(tree2, id2 + t2child);
+                    subTreeSize = writeSubtree(tree2, id2 + t2child, level + 1);
                 else if (t2child == 0)
-                    subTreeSize = writeSubtree(tree1, id1 + t1child);
+                    subTreeSize = writeSubtree(tree1, id1 + t1child, level + 1);
                 else
-                    subTreeSize = merge(id1 + t1child, id2 + t2child, pos + treeSize);
+                    subTreeSize = merge(id1 + t1child, id2 + t2child, pos + treeSize, level + 1);
 
                 mergedNode.children[i] = treeSize;
                 treeSize += subTreeSize;
             }
 
-            auto end = output.tellp();
+            if (level < bufferLevelThreshold) {
+                auto end = output.tellp();
 
-            output.seekp(writePos);
-            output.write(reinterpret_cast<const char *>(&mergedNode), sizeof(Node));
+                output.seekp(writePos);
+                output.write(reinterpret_cast<const char *>(&mergedNode), sizeof(Node));
 
-            output.seekp(end);
+                output.seekp(end);
+            } else {
+                buffer.data[writePos] = mergedNode;
+
+                if (level == bufferLevelThreshold) {
+                    output.write(reinterpret_cast<const char *>(buffer.data.data()), sizeof(Node) * buffer.data.size());
+                    buffer.data.clear();
+                }
+
+            }
 
             return treeSize;
         }
