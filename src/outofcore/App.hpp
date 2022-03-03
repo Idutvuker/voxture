@@ -22,6 +22,7 @@ struct App {
     struct Model {
         GLuint VAO;
         GLuint VBO;
+        GLuint SSBO;
 
         const std::vector<Triangle> &mesh;
         const Resources &res;
@@ -37,13 +38,23 @@ struct App {
 
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
             glEnableVertexAttribArray(0);
+
+            glGenBuffers(1, &SSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
+        }
+
+        void updateTree(const Octree &octree) {
+            glBufferData(GL_SHADER_STORAGE_BUFFER,
+                         GLsizeiptr(octree.data.size() * sizeof(Octree::Node)),
+                         octree.data.data(), GL_DYNAMIC_DRAW);
         }
 
         void draw(const glm::mat4 &MVPMat) const {
             using namespace glm;
-            res.testSP.use();
+            res.modelSP.use();
 
-            GLint MVPLoc = glGetUniformLocation(res.testSP.programID, "uModelViewProjMat");
+            GLint MVPLoc = glGetUniformLocation(res.modelSP.programID, "uModelViewProjMat");
 
             glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, glm::value_ptr(MVPMat));
 
@@ -116,6 +127,8 @@ struct App {
     void run() {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
+
+        loadTree();
 
         auto prevTime = float(glfwGetTime());
         while (!glfwWindowShouldClose(context.window)) {
@@ -211,5 +224,7 @@ struct App {
     void loadTree() {
         octrees.clear();
         octrees.emplace_back("finalOut/join_31.tree");
+
+        model.updateTree(octrees.front());
     }
 };

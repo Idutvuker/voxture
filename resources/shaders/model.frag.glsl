@@ -16,34 +16,42 @@ layout(std430, binding = 0) buffer Voxels {
     Node Octree[];
 };
 
+//bool isLeaf() {
+//
+//}
+
 vec3 sampleOctree(uvec3 targetVox) {
-    uint depth = 0;
+    uint level = 0;
 
     uvec3 curVox = uvec3(0);
     uint curPtr = 0;
 
-    while (curPtr != 0) {
-        uint levelDiff = MAX_LEVEL - depth - 1;
+    while (level < MAX_LEVEL) {
+        uint levelDiff = MAX_LEVEL - level - 1;
         uvec3 vox = targetVox >> levelDiff;
 
         uvec3 diff = vox - curVox * 2;
 
-        offset = (diff.x << 2) + (diff.y << 1) + (diff.z);
+        uint child = (diff.x << 2) + (diff.y << 1) + (diff.z);
 
-        curPtr = Octree[(curPtr & PTR_MASK) * 8 + offset];
+        uint childOffset = Octree[curPtr].children[child];
+
+        if (childOffset == 0)
+            break;
 
         curVox = vox;
+        curPtr = curPtr + childOffset;
 
-        depth++;
+        level++;
     }
 
-    uint color = curPtr;
+    uint color = Octree[curPtr].color;
 
     const uint RED_MASK = 0xff0000;
     const uint GREEN_MASK = 0x00ff00;
     const uint BLUE_MASK = 0x0000ff;
 
-    uint r = color >> 16;
+    uint r = (color & RED_MASK) >> 16;
     uint g = (color & GREEN_MASK) >> 8;
     uint b = color & BLUE_MASK;
 
