@@ -354,16 +354,23 @@ struct DiskTree {
 
             const Node &node = tree.getNode();
 
-            if (level < bufferLevelThreshold)
+            if (level < bufferLevelThreshold) {
                 output.write(reinterpret_cast<const char *>(&node), sizeof(Node));
-            else
+            }
+            else {
                 buffer.data.push_back(node);
+            }
 
             u32 treeSize = 1;
 
             for (u32 child: node.children)
                 if (child != 0)
                     treeSize += writeSubtree(tree, id + child, level + 1);
+
+            if (level == bufferLevelThreshold) {
+                output.write(reinterpret_cast<const char *>(buffer.data.data()), sizeof(Node) * buffer.data.size());
+                buffer.data.clear();
+            }
 
             return treeSize;
         }

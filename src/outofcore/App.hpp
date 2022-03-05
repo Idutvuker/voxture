@@ -223,7 +223,7 @@ struct App {
 
     void loadTree() {
         octrees.clear();
-        octrees.emplace_back("out4/test.tree");
+        octrees.emplace_back("finalOut/join_31.tree");
 
         model.updateTree(octrees.front());
     }

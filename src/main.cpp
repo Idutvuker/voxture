@@ -31,11 +31,11 @@ void compareTimes() {
     std::string first = "0";
     std::string second = "13";
 
-    tick();
+//    tick();
 //    DiskKeys::Merger::merge("out5/"+first+".keys", "out5/"+second+".keys", "out5/test.keys");
-
-    float elapsed1 = tick();
-    printf("Elapsed keys merge: %.3f sec\n", elapsed1);
+//
+//    float elapsed1 = tick();
+//    printf("Elapsed keys merge: %.3f sec\n", elapsed1);
 
     tick();
     DiskTree::merge("out4/"+first+".tree", "out4/"+second+".tree", "out4/test.tree");
