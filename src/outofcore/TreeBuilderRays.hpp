@@ -7,7 +7,7 @@ struct TreeBuilderRays {
     const std::vector<Triangle> &mesh;
     explicit TreeBuilderRays(const std::vector<Triangle> &_mesh): mesh(_mesh) {}
 
-    uint maxLevel = 10;
+    uint maxLevel = 14;
 
     std::vector<glm::vec3> points;
 
@@ -58,7 +58,7 @@ struct TreeBuilderRays {
 
                 uint curPtr = 0;
 
-                u8vec3 colorVec = photo.get({x, photo.height - y});
+                u8vec3 colorVec = photo.get({x, photo.height - y - 1});
                 u32 color = (colorVec.r << 16) | (colorVec.g << 8) | colorVec.b;
 
                 while (level < maxLevel) {

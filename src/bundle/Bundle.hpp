@@ -76,14 +76,14 @@ struct Bundle {
         size_t imgId = 1;
 
         for (BundleCamera &camera: cameras) {
-            printf("\rLoading image: %zu \\ %zu", imgId, cameras.size());
+            printf("Loading image: %zu \\ %zu \r", imgId, cameras.size());
             fflush(stdout);
             imgId++;
 
             std::string imgName;
             filestream >> imgName;
 
-//            camera.photo.emplace(imgDir / imgName);
+            camera.photo.emplace((imgDir / imgName).string());
 
             float fovY = atan2f(float(camera.photo->height) / 2, camera.focalLength) * 2;
 

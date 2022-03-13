@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include "../geom/Camera.hpp"
 #include "../common/Image.hpp"
+#include <optional>
 
 struct BundleCamera {
     Camera camera;

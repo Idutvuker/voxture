@@ -17,7 +17,7 @@ struct Image {
 
     std::vector<T> image;
 
-    Image(const std::string &filepath) {
+    explicit Image(const std::string &filepath) {
         uint8_t *stbiImg = stbi_load(filepath.c_str(), &width, &height, &numChannels, 0);
 
         if (!stbiImg)
@@ -38,6 +38,8 @@ struct Image {
     }
 
     T get(glm::uvec2 coord) const {
+        assert(glm::all(glm::lessThan(coord, {width, height})));
+
         return image[coord.y * width + coord.x];
     }
 

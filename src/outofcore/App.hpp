@@ -214,7 +214,7 @@ struct App {
             const auto &photo = bundle.cameras[i].photo.value();
 
             auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
-//            DiskTree::save(octree, "out4/" + std::to_string(i) + ".tree");
+            DiskTree::save(octree, "out/" + std::to_string(i) + ".tree");
 //            DiskKeys::Saver(octree, "out5/" + std::to_string(i) + ".keys").save();
         }
 
@@ -223,7 +223,7 @@ struct App {
 
     void loadTree() {
         octrees.clear();
-        octrees.emplace_back("finalOut/join_31.tree");
+        octrees.emplace_back("out/join_31.tree");
 
         model.updateTree(octrees.front());
     }

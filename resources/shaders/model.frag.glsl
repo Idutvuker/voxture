@@ -1,6 +1,6 @@
 #version 430 core
 
-const uint MAX_LEVEL = 10;
+const uint MAX_LEVEL = 11;
 
 in vec3 fPos;
 in vec4 gl_FragCoord;
@@ -16,11 +16,7 @@ layout(std430, binding = 0) buffer Voxels {
     Node Octree[];
 };
 
-//bool isLeaf() {
-//
-//}
-
-vec3 sampleOctree(uvec3 targetVox) {
+vec3 sampleOctree(uvec3 targetVox, out uint outLevel) {
     uint level = 0;
 
     uvec3 curVox = uvec3(0);
@@ -55,6 +51,7 @@ vec3 sampleOctree(uvec3 targetVox) {
     uint g = (color & GREEN_MASK) >> 8;
     uint b = color & BLUE_MASK;
 
+    outLevel = level;
     return vec3(r, g, b) / 255.f;
 }
 
@@ -73,23 +70,26 @@ const uvec3 VOX_OFFSET[8] = uvec3[](
 void main() {
     const uint gridSize = 1 << MAX_LEVEL;
 
+    uint level;
+
     const uvec3 baseVox = uvec3(fPos * gridSize);
-//    vec3 color = sampleOctree(baseVox);
+    vec3 color = sampleOctree(baseVox, level);
 
-    const vec3 voxFract = fract(fPos * gridSize);
-
-    vec3 colors[8];
-    for (int i = 0; i < 8; i++)
-        colors[i] = sampleOctree(baseVox + VOX_OFFSET[i]);
-
-    vec3 xLerp[4];
-    for (int i = 0; i < 4; i++)
-        xLerp[i] = mix(colors[i], colors[i + 4], voxFract.x);
-
-    vec3 yLerp0 = mix(xLerp[0], xLerp[2], voxFract.y);
-    vec3 yLerp1 = mix(xLerp[1], xLerp[3], voxFract.y);
-
-    vec3 color = mix(yLerp0, yLerp1, voxFract.z);
+//    const vec3 voxFract = fract(fPos * gridSize);
+//
+//    vec3 colors[8];
+//    for (int i = 0; i < 8; i++) {
+//        colors[i] = sampleOctree(baseVox + VOX_OFFSET[i], level);
+//    }
+//
+//    vec3 xLerp[4];
+//    for (int i = 0; i < 4; i++)
+//        xLerp[i] = mix(colors[i], colors[i + 4], voxFract.x);
+//
+//    vec3 yLerp0 = mix(xLerp[0], xLerp[2], voxFract.y);
+//    vec3 yLerp1 = mix(xLerp[1], xLerp[3], voxFract.y);
+//
+//    vec3 color = mix(yLerp0, yLerp1, voxFract.z);
 
     FragColor = vec4(color, 1.0);
 }

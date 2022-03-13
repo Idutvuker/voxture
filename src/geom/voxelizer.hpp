@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <queue>
+#include <array>
 
 namespace Voxelizer {
     using u32 = uint32_t;

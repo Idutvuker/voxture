@@ -45,24 +45,18 @@ void compareTimes() {
 }
 
 void buildFull() {
-    std::string prev = "0";
-
-    std::string dir = "finalOut/";
+    std::string dir = "out/";
 
     DiskTree::merge(dir + "0.tree", dir+"1.tree", dir+"join_1.tree");
 
     for (int i = 2; i < 32; i++) {
         printf("%d / %d\n", i + 1, 32);
         DiskTree::merge(dir+"join_"+std::to_string(i - 1)+".tree", dir+std::to_string(i)+".tree", dir+"join_"+std::to_string(i)+".tree");
-
-        std::string cur = std::to_string(i);
-
-        prev = cur;
     }
 }
 
 int main() {
-    compareTimes();
+//    compareTimes();
 
 //    buildFull();
 
