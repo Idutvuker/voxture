@@ -45,10 +45,6 @@ void compareTimes() {
 }
 
 int main() {
-//    compareTimes();
-
-//    buildFull();
-
     ModelViewer app;
     app.run();
 

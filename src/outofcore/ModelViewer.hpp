@@ -11,7 +11,7 @@
 #include "stb_image_write.h"
 
 struct ModelViewer {
-    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
+    Bundle bundle {"resources/saharov/saharov.obj"};
 
     GLFWContext context;
     Resources res;
@@ -142,7 +142,7 @@ struct ModelViewer {
     Octree octree;
 
     void loadTree() {
-        octree = Octree("out/0.tree");
+        octree = Octree("out/join_7.tree");
         model.updateTree(octree);
     }
 };

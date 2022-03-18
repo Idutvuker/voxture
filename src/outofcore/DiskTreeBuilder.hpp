@@ -61,6 +61,17 @@ struct DiskTreeBuilder {
         printf("\rBuilding octrees done!\n");
     }
 
+    void mergeAll() {
+        std::string dir = "out/";
+
+        DiskTree::merge(dir + "0.tree", dir + "1.tree", dir + "join_1.tree");
+
+        for (int i = 2; i < bundle.cameras.size(); i++) {
+            printf("%d / %d\n", i + 1, int(bundle.cameras.size()));
+            DiskTree::merge(dir+"join_"+std::to_string(i - 1)+".tree", dir+std::to_string(i)+".tree", dir+"join_"+std::to_string(i)+".tree");
+        }
+    }
+
     struct DepthReader {
         GLuint depthTex = 0;
         GLuint depthFBO = 0;

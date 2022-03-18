@@ -15,10 +15,16 @@ struct Bundle {
     std::vector<Triangle> mesh;
     std::vector<BundleCamera> cameras;
 
+    explicit Bundle(const fs::path &meshFilepath) : Bundle(meshFilepath, fs::path(), fs::path()) {};
+
     Bundle(const fs::path &meshFilepath, const fs::path &bundleOutFilepath, const fs::path &listFilepath, bool normalize = true) {
         getTriangles(meshFilepath.string(), mesh).assertOK();
-        loadCameras(bundleOutFilepath);
-        loadImages(listFilepath);
+
+        if (!bundleOutFilepath.empty())
+            loadCameras(bundleOutFilepath);
+
+        if (!listFilepath.empty())
+            loadImages(listFilepath);
 
         if (normalize)
             normalizeBundle();
