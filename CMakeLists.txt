@@ -7,9 +7,9 @@ include_directories(external "external/glad/include" "lib/include")
 add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c")
 link_directories("lib")
 
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp" "src/*.hpp")
+file(GLOB_RECURSE INIT_EXTERNAL CONFIGURE_DEPENDS "src/init-external/*.cpp")
 set(TARGET_NAME voxture)
-add_executable(${TARGET_NAME} ${SRC_FILES})
+add_executable(${TARGET_NAME} src/main.cpp ${INIT_EXTERNAL})
 
 set(IMGUI_PATH "external/imgui")
 
