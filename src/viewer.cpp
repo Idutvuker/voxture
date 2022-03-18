@@ -1,7 +1,7 @@
 #include "geom/voxelizer.hpp"
 #include "bundle/Bundle.hpp"
 
-#include "outofcore/App.hpp"
+#include "outofcore/ModelViewer.hpp"
 #include "outofcore/Octree.hpp"
 
 #include "outofcore/TreeBuilder.hpp"
@@ -44,23 +44,12 @@ void compareTimes() {
     printf("Elapsed tree merge: %.3f sec\n", elapsed2);
 }
 
-void buildFull() {
-    std::string dir = "out/";
-
-    DiskTree::merge(dir + "0.tree", dir + "1.tree", dir + "join_1.tree");
-
-    for (int i = 2; i < 10; i++) {
-        printf("%d / %d\n", i + 1, 32);
-        DiskTree::merge(dir+"join_"+std::to_string(i - 1)+".tree", dir+std::to_string(i)+".tree", dir+"join_"+std::to_string(i)+".tree");
-    }
-}
-
 int main() {
 //    compareTimes();
 
 //    buildFull();
 
-    App app;
+    ModelViewer app;
     app.run();
 
     return 0;

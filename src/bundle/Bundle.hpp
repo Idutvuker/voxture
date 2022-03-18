@@ -76,7 +76,7 @@ struct Bundle {
         size_t imgId = 1;
 
         for (BundleCamera &camera: cameras) {
-            printf("Loading image: %zu \\ %zu \r", imgId, cameras.size());
+            printf("\rLoading image: %zu \\ %zu", imgId, cameras.size());
             fflush(stdout);
             imgId++;
 

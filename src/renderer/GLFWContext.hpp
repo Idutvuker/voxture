@@ -7,22 +7,23 @@
 #include "mygl.hpp"
 
 struct GLFWContext {
-    const int WINDOW_WIDTH = 800;
-    const int WINDOW_HEIGHT = 600;
+    const int windowWidth;
+    const int windowHeight;
 
     GLFWwindow *window;
 
-    static void framebuffer_size_callback(GLFWwindow*, int width, int height) {
+    static void framebuffer_size_callback(GLFWwindow *, int width, int height) {
         glViewport(0, 0, width, height);
     }
 
     static int GLOBAL_SCROLL_Y;
 
-    static void scrollCallback(GLFWwindow*, double, double dy) {
+    static void scrollCallback(GLFWwindow *, double, double dy) {
         GLOBAL_SCROLL_Y += int(dy);
     }
 
-    GLFWContext() {
+    GLFWContext(int _windowWidth = 800, int _windowHeight = 600, bool windowVisible = true) :
+            windowWidth(_windowWidth), windowHeight(_windowHeight) {
         if (!glfwInit())
             throw std::runtime_error("GLFW failed to initialize");
 
@@ -30,8 +31,9 @@ struct GLFWContext {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+        glfwWindowHint(GLFW_VISIBLE, windowVisible);
 
-        window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Voxture", nullptr, nullptr);
+        window = glfwCreateWindow(windowWidth, windowHeight, "Voxture", nullptr, nullptr);
         if (window == nullptr)
             throw std::runtime_error("GLFW Window failed to initialize");
 
@@ -40,7 +42,7 @@ struct GLFWContext {
 
         glfwSetScrollCallback(window, scrollCallback);
 
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        if (!gladLoadGLLoader(GLADloadproc(glfwGetProcAddress)))
             throw std::runtime_error("GLAD failed to initialize");
 
         glfwSwapInterval(1);

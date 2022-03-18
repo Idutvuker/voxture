@@ -40,7 +40,7 @@ struct DBH {
         drawFunc(MVPMat);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, context.WINDOW_WIDTH, context.WINDOW_HEIGHT);
+        glViewport(0, 0, context.windowWidth, context.windowHeight);
 
         Image<float> depthMap(width, height);
 

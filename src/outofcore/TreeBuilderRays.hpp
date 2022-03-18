@@ -1,30 +1,10 @@
 #pragma once
 
+#include "Octree.hpp"
 #include "DBH.hpp"
 #include <unordered_set>
 
-
-// TODO: remove
-//Image<vec3> surfacePoints(depthMap.width, 2);
-//vec3 prevX = surfacePoints.get({x - 1, y & 1});
-//vec3 prevY = surfacePoints.get({x, (y - 1) & 1});
-//
-//vec3 normal;
-//if (any(lessThan(prevX, vec3(0))) || any(lessThan(prevY, vec3(0))))
-//normal = vec3(0);
-//else
-//normal = normalize(cross(
-//        surfacePoints.get({x - 1, y & 1}) - point,
-//        surfacePoints.get({x, (y - 1) & 1}) - point));
-//
-//u8vec3 colorVec = normal * 255.f;
-
-
 struct TreeBuilderRays {
-    const std::vector<Triangle> &mesh;
-
-    explicit TreeBuilderRays(const std::vector<Triangle> &_mesh) : mesh(_mesh) {}
-
     uint maxLevel = 10;
 
     std::vector<glm::vec3> points;
