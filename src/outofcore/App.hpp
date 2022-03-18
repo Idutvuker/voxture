@@ -107,6 +107,7 @@ struct App {
     void draw() {
         if (drawMode == DrawMode::MODEL) {
             model.draw(renderCamera.projection * renderCamera.view);
+//            model.draw(bundle.cameras.front().camera.getViewProj());
         }
         else if (drawMode == DrawMode::VOXELS) {
 //            voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
@@ -223,8 +224,11 @@ struct App {
 
     void loadTree() {
         octrees.clear();
-        octrees.emplace_back("out/join_31.tree");
-
+//        Octree octree{};
+//        octree.data.emplace_back();
+//        octrees.push_back(octree);
+        octrees.emplace_back("out2/join_9.tree");
+//
         model.updateTree(octrees.front());
     }
 };

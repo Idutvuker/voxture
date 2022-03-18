@@ -3,11 +3,29 @@
 #include "DBH.hpp"
 #include <unordered_set>
 
+
+// TODO: remove
+//Image<vec3> surfacePoints(depthMap.width, 2);
+//vec3 prevX = surfacePoints.get({x - 1, y & 1});
+//vec3 prevY = surfacePoints.get({x, (y - 1) & 1});
+//
+//vec3 normal;
+//if (any(lessThan(prevX, vec3(0))) || any(lessThan(prevY, vec3(0))))
+//normal = vec3(0);
+//else
+//normal = normalize(cross(
+//        surfacePoints.get({x - 1, y & 1}) - point,
+//        surfacePoints.get({x, (y - 1) & 1}) - point));
+//
+//u8vec3 colorVec = normal * 255.f;
+
+
 struct TreeBuilderRays {
     const std::vector<Triangle> &mesh;
-    explicit TreeBuilderRays(const std::vector<Triangle> &_mesh): mesh(_mesh) {}
 
-    uint maxLevel = 14;
+    explicit TreeBuilderRays(const std::vector<Triangle> &_mesh) : mesh(_mesh) {}
+
+    uint maxLevel = 10;
 
     std::vector<glm::vec3> points;
 
@@ -31,8 +49,8 @@ struct TreeBuilderRays {
 
         mat4 invViewProj = inverse(viewProjMat);
 
-        for (int y = 0; y < depthMap.height; y++) {
-            for (int x = 0; x < depthMap.width; x++) {
+        for (int y = 0; y < depthMap.height - 1; y++) {
+            for (int x = 0; x < depthMap.width - 1; x++) {
                 float depthNDC = depthMap.get({x, y}) * 2 - 1;
 
                 if (depthNDC == 1)
@@ -46,20 +64,27 @@ struct TreeBuilderRays {
                 if (!all(lessThan(point, vec3(1))))
                     continue;
 
-                points.push_back(point);
-
                 const uvec3 minVox = point * float(1 << maxLevel);
 
                 uvec3 curVox = {0, 0, 0};
                 uint level = 0;
 
-                const float pointSize = Camera::linearizeDepthNDC(depthNDC) / focalLength;
+                float worldDepth = Camera::linearizeDepthNDC(depthNDC);
+                const float pointSize = worldDepth / focalLength;
                 float levelVoxelSize = 1;
 
                 uint curPtr = 0;
 
+                float d1 = Camera::linearizeDepthNDC(depthMap.get({x + 1, y}) * 2 - 1);
+                float d2 = Camera::linearizeDepthNDC(depthMap.get({x, y + 1}) * 2 - 1);
+
+                float dx = (d1 - worldDepth) / pointSize;
+                float dy = (d2 - worldDepth) / pointSize;
+
+                u8 quality = u8(min(dx * dx + dy * dy, 1.f) * 255.f + 0.5f);
+
                 u8vec3 colorVec = photo.get({x, photo.height - y - 1});
-                u32 color = (colorVec.r << 16) | (colorVec.g << 8) | colorVec.b;
+                u32 color = (quality << 24) | (colorVec.r << 16) | (colorVec.g << 8) | colorVec.b;
 
                 while (level < maxLevel) {
                     if (levelVoxelSize <= pointSize)

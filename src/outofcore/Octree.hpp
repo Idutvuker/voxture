@@ -9,6 +9,10 @@ struct Octree {
         std::array<u32, 8> children{};
         u32 color = 0;
 
+        u32 getQuality() const {
+            return color >> 24;
+        }
+
         bool isLeaf() const {
             for (const auto &child: children)
                 if (child != 0)
@@ -381,7 +385,10 @@ struct DiskTree {
             const Node &node2 = tree2.getNode();
 
             Node mergedNode{};
-            mergedNode.color = node1.color;
+            if (node1.getQuality() < node2.getQuality())
+                mergedNode.color = node1.color;
+            else
+                mergedNode.color = node2.color;
 
             u32 treeSize = 1;
 

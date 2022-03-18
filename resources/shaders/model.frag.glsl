@@ -75,12 +75,14 @@ void main() {
     const uvec3 baseVox = uvec3(fPos * gridSize);
     vec3 color = sampleOctree(baseVox, level);
 
-//    const vec3 voxFract = fract(fPos * gridSize);
-//
 //    vec3 colors[8];
+//    uint maxSampleLevel;
 //    for (int i = 0; i < 8; i++) {
 //        colors[i] = sampleOctree(baseVox + VOX_OFFSET[i], level);
+//        maxSampleLevel = max(maxSampleLevel, level);
 //    }
+//
+//    const vec3 voxFract = fract(fPos * (1 << maxSampleLevel)); // ??
 //
 //    vec3 xLerp[4];
 //    for (int i = 0; i < 4; i++)
