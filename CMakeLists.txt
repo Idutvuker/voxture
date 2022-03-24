@@ -6,6 +6,7 @@ include_directories(external "external/glad/include" "lib/include")
 
 add_library(glad "external/glad/include/glad/glad.h" "external/glad/src/glad.c")
 link_directories("lib")
+find_package(glfw3 NAMES glfw3)
 
 file(GLOB_RECURSE INIT_EXTERNAL CONFIGURE_DEPENDS "src/init-external/*.cpp")
 

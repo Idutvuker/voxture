@@ -53,10 +53,13 @@ struct DiskTreeBuilder {
                 stbi_write_bmp("out/test.bmp", test.width, test.height, 3, test.image.data());
             }*/
 
-            const auto &photo = bundle.cameras[i].photoInfo.loadImage();
-
-            auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
-            DiskTree::save(octree, outputPath + std::to_string(i) + ".tree");
+            try {
+                auto photo = bundle.cameras[i].photoInfo.loadImage();
+                auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
+                DiskTree::save(octree, outputPath + std::to_string(i) + ".tree");
+            } catch (const std::runtime_error &error) {
+                std::cerr << error.what() << std::endl;
+            }
         }
 
         printf("\rBuilding octrees done!\n");
@@ -94,6 +97,11 @@ struct DiskTreeBuilder {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
+        }
+
+        ~DepthReader() {
+            glDeleteFramebuffers(1, &depthFBO);
+            glDeleteTextures(1, &depthTex);
         }
 
         Image<float> calcDepthMap(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4 &MVPMat) {

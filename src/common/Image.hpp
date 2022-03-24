@@ -20,8 +20,9 @@ struct Image {
     explicit Image(const std::string &filepath) {
         uint8_t *stbiImg = stbi_load(filepath.c_str(), &width, &height, &numChannels, 0);
 
-        if (!stbiImg)
+        if (!stbiImg) {
             throw std::runtime_error("Failed to load image " + filepath);
+        }
 
         image.resize(width * height);
         std::memcpy(image.data(), stbiImg, width * height * TYPE_SIZE);
