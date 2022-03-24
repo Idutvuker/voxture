@@ -1,13 +1,13 @@
 #pragma once
 
-#include "common/constants.hpp"
+#include "../common/constants.hpp"
 #include "../renderer/GLFWContext.hpp"
 #include "../bundle/Bundle.hpp"
-#include "renderer/Resources.hpp"
-#include "outofcore/TreeBuilderRays.hpp"
-#include "outofcore/Octree.hpp"
-#include "outofcore/Model.hpp"
-#include "outofcore/DBH.hpp"
+#include "../renderer/Resources.hpp"
+#include "TreeBuilderRays.hpp"
+#include "Octree.hpp"
+#include "Model.hpp"
+#include "DBH.hpp"
 
 #include <functional>
 
