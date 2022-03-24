@@ -1,7 +1,7 @@
 #include "outofcore/DiskTreeBuilder.hpp"
 
 int main() {
-    DiskTreeBuilder builder;
+    DiskTreeBuilder builder("resources/saharov/", "out/");
     builder.buildAllTrees();
     builder.mergeAll();
 

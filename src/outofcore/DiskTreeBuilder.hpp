@@ -14,7 +14,8 @@
 #include "stb_image_write.h"
 
 struct DiskTreeBuilder {
-    Bundle bundle {"resources/saharov/model.ply", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
+    Bundle bundle;
+    std::string outputPath;
 
     GLFWContext context {100, 100, false};
     Resources res;
@@ -38,7 +39,7 @@ struct DiskTreeBuilder {
             auto MVP = cam.camera.getViewProj();
             float focalLength = cam.focalLength;
 
-            DepthReader depthReader({cam.photo->width, cam.photo->height});
+            DepthReader depthReader(cam.photoInfo.dims);
 
             auto depthMap = depthReader.calcDepthMap(drawFunc, MVP);
 
@@ -52,17 +53,17 @@ struct DiskTreeBuilder {
                 stbi_write_bmp("out/test.bmp", test.width, test.height, 3, test.image.data());
             }*/
 
-            const auto &photo = bundle.cameras[i].photo.value();
+            const auto &photo = bundle.cameras[i].photoInfo.loadImage();
 
             auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
-            DiskTree::save(octree, "out/" + std::to_string(i) + ".tree");
+            DiskTree::save(octree, outputPath + std::to_string(i) + ".tree");
         }
 
         printf("\rBuilding octrees done!\n");
     }
 
     void mergeAll() {
-        std::string dir = "out/";
+        const std::string &dir = outputPath;
 
         DiskTree::merge(dir + "0.tree", dir + "1.tree", dir + "join_1.tree");
 
@@ -76,12 +77,12 @@ struct DiskTreeBuilder {
         GLuint depthTex = 0;
         GLuint depthFBO = 0;
 
-        glm::ivec2 dims;
+        glm::uvec2 dims;
 
-        DepthReader(const glm::ivec2 &_dims) : dims(_dims) {
+        DepthReader(const glm::uvec2 &_dims) : dims(_dims) {
             glGenTextures(1, &depthTex);
             glBindTexture(GL_TEXTURE_2D, depthTex);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, dims.x, dims.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GLsizei(dims.x), GLsizei(dims.y), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -96,7 +97,7 @@ struct DiskTreeBuilder {
         }
 
         Image<float> calcDepthMap(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4 &MVPMat) {
-            glViewport(0, 0, dims.x, dims.y);
+            glViewport(0, 0, GLsizei(dims.x), GLsizei(dims.y));
             glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -109,6 +110,11 @@ struct DiskTreeBuilder {
             return depthMap;
         }
     };
+
+    explicit DiskTreeBuilder(const std::string &bundlePath, const std::string &_outputPath) :
+        bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
+        outputPath(_outputPath)
+        {}
 };
 
 

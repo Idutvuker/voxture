@@ -79,24 +79,16 @@ struct Bundle {
 
         std::ifstream filestream(listFilepath);
 
-        size_t imgId = 1;
-
         for (BundleCamera &camera: cameras) {
-            printf("\rLoading image: %zu \\ %zu", imgId, cameras.size());
-            fflush(stdout);
-            imgId++;
-
             std::string imgName;
             filestream >> imgName;
 
-            camera.photo.emplace((imgDir / imgName).string());
+            camera.photoInfo = PhotoInfo((imgDir / imgName).string());
 
-            float fovY = atan2f(float(camera.photo->height) / 2, camera.focalLength) * 2;
+            float fovY = atan2f(float(camera.photoInfo.dims.y) / 2, camera.focalLength) * 2;
 
-            camera.camera.projection = glm::perspective(fovY, float(camera.photo->width) / float(camera.photo->height), CAMERA_NEAR, CAMERA_FAR);
+            camera.camera.projection = glm::perspective(fovY, float(camera.photoInfo.dims.x) / float(camera.photoInfo.dims.y), CAMERA_NEAR, CAMERA_FAR);
         }
-
-        printf("\rLoading images done!\n");
     }
 
     glm::mat4 calcNormalizeMat() {
