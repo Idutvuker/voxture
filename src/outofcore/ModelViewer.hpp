@@ -11,7 +11,7 @@
 #include "stb_image_write.h"
 
 struct ModelViewer {
-    Bundle bundle {"resources/saharov/saharov.obj"};
+    Bundle bundle {"resources/saharov/model.ply"};
 
     GLFWContext context;
     Resources res;
@@ -62,8 +62,15 @@ struct ModelViewer {
     DebugDraw debugDraw {};
 
     void draw() {
+        glm::mat4 MVP;
+        if (useBundleCamera) {
+            MVP = bundle.cameras[0].camera.getViewProj();
+        } else {
+            MVP = renderCamera.getViewProj();
+        }
+
         if (drawMode == DrawMode::MODEL) {
-            model.draw(renderCamera.projection * renderCamera.view);
+            model.draw(MVP);
 //            model.draw(bundle.cameras.front().camera.getViewProj());
         }
         else if (drawMode == DrawMode::VOXELS) {
@@ -80,6 +87,8 @@ struct ModelViewer {
     void update(float delta) {
         cameraController.update(delta);
     }
+
+    bool useBundleCamera = false;
 
     void run() {
         glEnable(GL_DEPTH_TEST);
@@ -113,6 +122,8 @@ struct ModelViewer {
 
                     if (ImGui::Button("Draw Voxels"))
                         drawMode = DrawMode::VOXELS;
+
+                    ImGui::Checkbox("Bundle camera", &useBundleCamera);
                 }
 
                 ImGui::Text("Voxel count: %zu", octree.data.size());
@@ -142,7 +153,7 @@ struct ModelViewer {
     Octree octree;
 
     void loadTree() {
-        octree = Octree("out/join_7.tree");
+        octree = Octree("out/join_6.tree");
         model.updateTree(octree);
     }
 };

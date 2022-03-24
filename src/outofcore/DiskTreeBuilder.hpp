@@ -14,7 +14,7 @@
 #include "stb_image_write.h"
 
 struct DiskTreeBuilder {
-    Bundle bundle {"resources/saharov/saharov.obj", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
+    Bundle bundle {"resources/saharov/model.ply", "resources/saharov/cameras.out", "resources/saharov/list.txt"};
 
     GLFWContext context {100, 100, false};
     Resources res;

@@ -55,9 +55,9 @@ struct Bundle {
                 }
             }
 
-            vec3 temp = orientation[1];
-            orientation[1] = orientation[2];
-            orientation[2] = -temp;
+//            vec3 temp = orientation[1];
+//            orientation[1] = orientation[2];
+//            orientation[2] = -temp;
 
             glm::vec3 pos;
             for (int i = 0; i < 3; i++) {

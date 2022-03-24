@@ -7,6 +7,8 @@
 #include <vector>
 #include <obj_loader.h>
 
+#include "happly.h"
+
 struct Triangle {
     glm::vec3 a;
     glm::vec3 b;
@@ -30,8 +32,32 @@ struct Triangle {
 };
 
 
-
 inline Status getTriangles(const std::string &filepath, std::vector<Triangle> &res) {
+    happly::PLYData plyData(filepath);
+
+    std::vector<float> vPosX = plyData.getElement("vertex").getProperty<float>("x");
+    std::vector<float> vPosY = plyData.getElement("vertex").getProperty<float>("y");
+    std::vector<float> vPosZ = plyData.getElement("vertex").getProperty<float>("z");
+
+    std::vector<std::vector<size_t>> fInd = plyData.getFaceIndices<size_t>();
+
+    for (const auto &tri: fInd) {
+        assert(tri.size() == 3);
+
+        Triangle newTri;
+        for (int i = 0; i < 3; i++) {
+            size_t idx = tri[i];
+            newTri[i] = glm::vec3(vPosX[idx], vPosY[idx], vPosZ[idx]);
+        }
+
+        res.push_back(newTri);
+    }
+
+    return Status::ok();
+}
+
+
+inline Status getTrianglesFromOBJ(const std::string &filepath, std::vector<Triangle> &res) {
     tinyobj::ObjReader reader;
 
     if (!reader.ParseFromFile(filepath)) {
