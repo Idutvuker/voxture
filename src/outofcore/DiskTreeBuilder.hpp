@@ -38,13 +38,6 @@ struct DiskTreeBuilder {
             const auto &cam = bundle.cameras[i];
 
             auto MVP = cam.camera.getViewProj();
-//            glm::mat4 MVP = glm::mat4(
-//                    1.261805, 0.069655, -0.234370, -0.234276,
-//                    0.000000, 1.707083, 0.169250, 0.169182,
-//                    -0.308785, 0.284634, -0.957719, -0.957336,
-//                    -0.652295, -0.668816, 0.526682, 0.546467
-//            );
-
 
             float focalLength = cam.focalLength;
 
