@@ -132,15 +132,10 @@ struct Bundle {
         }
 
         for (auto &camera: cameras) {
-            std::cout << "prev " << glm::to_string(camera.camera.view[3]) << std::endl;
-
             camera.camera.view = glm::translate(camera.camera.view, -offset);
             camera.camera.view[3].x *= scale;
             camera.camera.view[3].y *= scale;
             camera.camera.view[3].z *= scale;
-
-
-            std::cout << glm::to_string(camera.camera.view[3]) << std::endl;
         }
     }
 };
