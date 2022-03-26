@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <iostream>
 
-#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 namespace fs = std::filesystem;
 
@@ -91,7 +91,7 @@ struct Bundle {
         }
     }
 
-    glm::mat4 calcNormalizeMat() {
+    std::pair<glm::vec3, float> calcNormalizeParams() {
         auto aabbMin = glm::vec3(std::numeric_limits<float>::infinity());
         auto aabbMax = glm::vec3(-std::numeric_limits<float>::infinity());
 
@@ -110,27 +110,37 @@ struct Bundle {
                 scaleAxis = i;
 
         int resolution = 1 << RESOLUTION_LEVEL;
-        float scale = std::nextafter(float(resolution - 1) / float(resolution), 0.f);
+        float unit = std::nextafter(float(resolution - 1) / float(resolution), 0.f);
+        float scale = unit / diff[scaleAxis];
 
-        return glm::translate(glm::scale(glm::mat4(1), glm::vec3(scale / diff[scaleAxis])), -aabbMin);
+        return {-aabbMin, scale};
     }
 
     //// Normalizes mesh and cameras
     void normalizeBundle() {
-        glm::mat4 normMat = calcNormalizeMat();
+        auto normResult = calcNormalizeParams();
+        glm::vec3 offset = normResult.first;
+        float scale = normResult.second;
 
-        for (auto &t: mesh) {
+        for (auto &tri: mesh) {
             for (size_t i = 0; i < 3; i++) {
-                t[i] = normMat * glm::vec4(t[i], 1);
+                tri[i] = (tri[i] + offset) * scale;
 
                 for (int j = 0; j < 3; j++)
-                    assert(0 <= t[i][j] && t[i][j] < 1 && "coordinates should be in [0, 1)");
+                    assert(0 <= tri[i][j] && tri[i][j] < 1 && "coordinates should be in [0, 1)");
             }
         }
 
-        glm::mat4 inverseNormMat = glm::inverse(normMat);
+        for (auto &camera: cameras) {
+            std::cout << "prev " << glm::to_string(camera.camera.view[3]) << std::endl;
 
-        for (auto &camera: cameras)
-            camera.camera.view *= inverseNormMat;
+            camera.camera.view = glm::translate(camera.camera.view, -offset);
+            camera.camera.view[3].x *= scale;
+            camera.camera.view[3].y *= scale;
+            camera.camera.view[3].z *= scale;
+
+
+            std::cout << glm::to_string(camera.camera.view[3]) << std::endl;
+        }
     }
 };

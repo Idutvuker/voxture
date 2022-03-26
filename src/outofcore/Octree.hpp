@@ -36,6 +36,21 @@ struct Octree {
         Node node;
         while (inputFile.read(reinterpret_cast<char *>(&node), sizeof(node)))
             data.push_back(node);
+
+        std::cout << "Max depth: " << dfs(0, 0) << std::endl;
+    }
+
+    int dfs(size_t v, int depth) {
+        int ans = depth;
+
+        for (uint i = 0; i < 8; i++) {
+            auto childOffs = data[v].children[i];
+            if (childOffs != 0) {
+                ans = std::max(ans, dfs(v + childOffs, depth + 1));
+            }
+        }
+
+        return ans;
     }
 };
 

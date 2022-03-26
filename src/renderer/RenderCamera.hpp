@@ -9,7 +9,7 @@
 struct RenderCamera : Camera {
     const float aspectRatio;
 
-    float FOV = CAMERA_DEFAULT_FOV;
+    const float FOV = CAMERA_DEFAULT_FOV;
     const float NEAR = CAMERA_NEAR;
     const float FAR = CAMERA_FAR;
 

@@ -17,7 +17,7 @@ struct DebugDraw {
     void drawPoints(const Camera &camera, const Resources &res, const std::vector<glm::vec3> &points) {
         using namespace glm;
 
-//        glPointSize(10);
+        glPointSize(10);
 
         glBindVertexArray(VAO);
         res.testSP.use();

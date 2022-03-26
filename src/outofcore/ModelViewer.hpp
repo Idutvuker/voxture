@@ -9,9 +9,10 @@
 #include "../renderer/OrbitCameraController.hpp"
 #include "Model.hpp"
 #include "stb_image_write.h"
+#include "../bundle/Bundle.hpp"
 
 struct ModelViewer {
-    Bundle bundle {"resources/saharov/model.ply"};
+    Bundle bundle;
 
     GLFWContext context;
     Resources res;
@@ -61,6 +62,9 @@ struct ModelViewer {
 
     DebugDraw debugDraw {};
 
+    const glm::mat4 &camView = bundle.cameras.front().camera.view;
+    std::vector <glm::vec3> debugPoints = {glm::vec3(camView[3])};
+
     void draw() {
         glm::mat4 MVP;
         if (useBundleCamera) {
@@ -76,7 +80,6 @@ struct ModelViewer {
         else if (drawMode == DrawMode::VOXELS) {
 //            voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
 //            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
-//            debugDraw.drawPoints(renderCamera, res, treeBuilder.points);
             voxelGrid.drawOctree(renderCamera, res, octree);
         }
         else {
@@ -131,6 +134,9 @@ struct ModelViewer {
                 if (ImGui::Button("Load tree"))
                     loadTree();
 
+                if (ImGui::Button("Print position"))
+                    printCamPosition();
+
                 ImGui::End();
             }
 
@@ -148,12 +154,21 @@ struct ModelViewer {
         }
     }
 
-    ModelViewer() = default;
-
     Octree octree;
 
+    void printCamPosition() {
+        std::cout << glm::to_string(bundle.cameras.front().camera.view) << std::endl;
+//        std::cout << glm::to_string(renderCamera.view) << std::endl;
+//        std::cout << glm::to_string(renderCamera.getViewProj()) << std::endl;
+    }
+
     void loadTree() {
-        octree = Octree("out/join_6.tree");
+//        octree = Octree("out/0.tree");
         model.updateTree(octree);
     }
+
+    ModelViewer(const std::string &bundlePath, const std::string &octreePath) :
+        bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
+        octree(octreePath)
+    {}
 };

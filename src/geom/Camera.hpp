@@ -12,6 +12,6 @@ struct Camera {
     }
 
     static float linearizeDepthNDC(float depth) {
-        return (2 * CAMERA_NEAR * CAMERA_FAR) / (CAMERA_FAR + CAMERA_NEAR - depth * (CAMERA_FAR - CAMERA_NEAR));
+        return (2.f * CAMERA_NEAR * CAMERA_FAR) / (CAMERA_FAR + CAMERA_NEAR - depth * (CAMERA_FAR - CAMERA_NEAR));
     }
 };

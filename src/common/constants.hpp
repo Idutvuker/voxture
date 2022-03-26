@@ -5,11 +5,11 @@
 
 using uint = uint32_t;
 
-constexpr uint32_t RESOLUTION_LEVEL = 10;
+constexpr uint32_t RESOLUTION_LEVEL = 16;
 
 constexpr float CAMERA_NEAR = 0.01f;
 constexpr float CAMERA_FAR = 50.f;
-constexpr float CAMERA_DEFAULT_FOV = 60.f;
+constexpr float CAMERA_DEFAULT_FOV = 48.f;
 
 constexpr std::array<glm::uvec3, 8> VOX_OFFSET = {
         glm::ivec3(0, 0, 0),
