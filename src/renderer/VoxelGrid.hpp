@@ -9,6 +9,7 @@
 #include "Resources.hpp"
 #include "../outofcore/Octree.hpp"
 #include "../common/constants.hpp"
+#include "../outofcore/CompactTree.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -191,4 +192,22 @@ struct VoxelGrid {
         OctreeRenderer octreeRenderer(ViewProjMat, MVPLoc, ColorLoc, octree);
         octreeRenderer.draw(0, uvec3(0, 0, 0), 1.f);
     }
+
+//    void drawOctree(const Camera &camera, const Resources &res, const CompactTree &octree) const {
+//        if (octree.data.empty())
+//            return;
+//
+//        using namespace glm;
+//
+//        glBindVertexArray(VAO);
+//
+//        res.voxelSP.use();
+//        GLint MVPLoc = glGetUniformLocation(res.voxelSP.programID, "uModelViewProjMat");
+//        GLint ColorLoc = glGetUniformLocation(res.voxelSP.programID, "uColor");
+//
+//        mat4 ViewProjMat = camera.projection * camera.view;
+//
+//        OctreeRenderer octreeRenderer(ViewProjMat, MVPLoc, ColorLoc, octree);
+//        octreeRenderer.draw(0, uvec3(0, 0, 0), 1.f);
+//    }
 };

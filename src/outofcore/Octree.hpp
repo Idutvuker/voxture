@@ -37,7 +37,7 @@ struct Octree {
         while (inputFile.read(reinterpret_cast<char *>(&node), sizeof(node)))
             data.push_back(node);
 
-        std::cout << "Max depth: " << dfs(0, 0) << std::endl;
+        std::cout << "Tree depth: " << dfs(0, 0) + 1 << std::endl;
     }
 
     int dfs(size_t v, int depth) {

@@ -1,6 +1,6 @@
 #version 430 core
 
-const uint MAX_LEVEL = 11;
+const uint MAX_LEVEL = 20;
 
 in vec3 fPos;
 in vec4 gl_FragCoord;

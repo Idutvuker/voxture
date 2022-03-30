@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/gtc/type_ptr.hpp>
+#include "CompactTree.hpp"
 
 struct Model {
     GLuint VAO;
@@ -27,9 +28,9 @@ struct Model {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
     }
 
-    void updateTree(const Octree &octree) {
+    void updateTree(const CompactTree &octree) {
         glBufferData(GL_SHADER_STORAGE_BUFFER,
-                     GLsizeiptr(octree.data.size() * sizeof(Octree::Node)),
+                     GLsizeiptr(octree.data.size() * sizeof(CompactTree::Node)),
                      octree.data.data(), GL_DYNAMIC_DRAW);
     }
 

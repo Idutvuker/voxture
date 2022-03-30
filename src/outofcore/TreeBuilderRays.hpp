@@ -5,7 +5,7 @@
 #include <unordered_set>
 
 struct TreeBuilderRays {
-    uint maxLevel = 20;
+    uint maxLevel = 8;
 
     std::vector<glm::vec3> points;
 

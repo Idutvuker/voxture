@@ -10,6 +10,7 @@
 #include "Model.hpp"
 #include "stb_image_write.h"
 #include "../bundle/Bundle.hpp"
+#include "CompactTree.hpp"
 
 struct ModelViewer {
     Bundle bundle;
@@ -80,7 +81,7 @@ struct ModelViewer {
         else if (drawMode == DrawMode::VOXELS) {
 //            voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
 //            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
-            voxelGrid.drawOctree(renderCamera, res, octree);
+//            voxelGrid.drawOctree(renderCamera, res, octree);
         }
         else {
             viewPlane.draw();
@@ -154,7 +155,7 @@ struct ModelViewer {
         }
     }
 
-    Octree octree;
+    CompactTree octree;
 
     void printCamPosition() {
         std::cout << glm::to_string(bundle.cameras.front().camera.view) << std::endl;

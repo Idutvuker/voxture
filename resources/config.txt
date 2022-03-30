@@ -1,2 +1,2 @@
-resources/citywall/ out/
-resources/citywall/ out/0.tree
+resources/saharov/ out/
+resources/saharov/ compact/saharov.ctree
