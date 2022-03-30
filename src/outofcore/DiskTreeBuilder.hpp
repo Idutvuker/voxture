@@ -10,8 +10,11 @@
 #include "DBH.hpp"
 
 #include <functional>
+#include <filesystem>
 
 #include "stb_image_write.h"
+
+namespace fs = std::filesystem;
 
 struct DiskTreeBuilder {
     Bundle bundle;
@@ -25,56 +28,55 @@ struct DiskTreeBuilder {
     TreeBuilderRays treeBuilder;
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
 
-    DiskTreeBuilder() = default;
+    fs::path buildRec(uint left, uint right) {
+        if (right - left < 1)
+            return {};
 
-    void buildAllTrees() {
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
+        if (right - left == 1)
+            return buildTree(left);
 
-        for (size_t i = 0; i < bundle.cameras.size(); i++) {
-            printf("\rBuilding octrees %zu/%zu", i + 1, bundle.cameras.size());
-            fflush(stdout);
+        uint mid = (left + right) / 2;
+        auto leftTree = buildRec(left, mid);
+        auto rightTree = buildRec(mid, right);
 
-            const auto &cam = bundle.cameras[i];
+        if (leftTree.empty())
+            return rightTree;
+        if (rightTree.empty())
+            return leftTree;
 
-            auto MVP = cam.camera.getViewProj();
+        fs::path newPath = outputPath + (std::to_string(left) + '_' + std::to_string(right)) + ".tree";
 
-            float focalLength = cam.focalLength;
+        DiskTree::merge(leftTree.string(), rightTree.string(), newPath.string());
 
-            DepthReader depthReader(cam.photoInfo.dims);
+        fs::remove(leftTree);
+        fs::remove(rightTree);
 
-            auto depthMap = depthReader.calcDepthMap(drawFunc, MVP);
-
-//            {
-//                Image<glm::u8vec3> test(depthMap.width, depthMap.height);
-//
-//                for (int j = 0; j < test.width * test.height; j++) {
-//                    test.image[j] = glm::u8vec3(depthMap.image[j] * 255.f);
-//                }
-//
-//                stbi_write_bmp("out/test.bmp", test.width, test.height, 3, test.image.data());
-//            }
-
-            try {
-                auto photo = bundle.cameras[i].photoInfo.loadImage();
-                auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
-                DiskTree::save(octree, outputPath + std::to_string(i) + ".tree");
-            } catch (const std::runtime_error &error) {
-                std::cerr << error.what() << std::endl;
-            }
-        }
-
-        printf("\rBuilding octrees done!\n");
+        return newPath;
     }
 
-    void mergeAll() {
-        const std::string &dir = outputPath;
+    void buildAll() {
+        buildRec(0, bundle.cameras.size());
+    }
 
-        DiskTree::merge(dir + "0.tree", dir + "1.tree", dir + "join_1.tree");
+    fs::path buildTree(uint cameraId) {
+        const auto &cam = bundle.cameras[cameraId];
+        auto MVP = cam.camera.getViewProj();
+        float focalLength = cam.focalLength;
 
-        for (int i = 2; i < bundle.cameras.size(); i++) {
-            printf("%d / %d\n", i + 1, int(bundle.cameras.size()));
-            DiskTree::merge(dir+"join_"+std::to_string(i - 1)+".tree", dir+std::to_string(i)+".tree", dir+"join_"+std::to_string(i)+".tree");
+        DepthReader depthReader(cam.photoInfo.dims);
+        auto depthMap = depthReader.calcDepthMap(drawFunc, MVP);
+
+        try {
+            auto photo = cam.photoInfo.loadImage();
+            auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
+
+            auto newPath = fs::path(outputPath + std::to_string(cameraId) + ".tree");
+            DiskTree::save(octree, newPath.string());
+
+            return newPath;
+        } catch (const std::runtime_error &error) {
+            std::cerr << error.what() << std::endl;
+            return {};
         }
     }
 
@@ -124,7 +126,10 @@ struct DiskTreeBuilder {
     explicit DiskTreeBuilder(const std::string &bundlePath, const std::string &_outputPath) :
         bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
         outputPath(_outputPath)
-        {}
+        {
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
+        }
 };
 
 

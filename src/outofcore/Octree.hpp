@@ -354,7 +354,7 @@ struct DiskTree {
         std::ofstream output;
 
         Octree buffer;
-        uint bufferLevelThreshold = 3;
+        uint bufferLevelThreshold = 4;
 
         Merger(const std::string &filepath1, const std::string &filepath2, const std::string &outputFilepath) :
                 tree1(filepath1),
