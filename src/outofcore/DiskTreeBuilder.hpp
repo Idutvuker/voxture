@@ -54,8 +54,8 @@ struct DiskTreeBuilder {
         return newPath;
     }
 
-    void buildAll() {
-        buildRec(0, bundle.cameras.size());
+    fs::path buildAll() {
+        return buildRec(0, bundle.cameras.size());
     }
 
     fs::path buildTree(uint cameraId) {
@@ -65,6 +65,8 @@ struct DiskTreeBuilder {
 
         DepthReader depthReader(cam.photoInfo.dims);
         auto depthMap = depthReader.calcDepthMap(drawFunc, MVP);
+
+        std::cout << "Building tree " << cameraId << std::endl;
 
         try {
             auto photo = cam.photoInfo.loadImage();

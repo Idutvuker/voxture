@@ -12,6 +12,8 @@
 #include "../bundle/Bundle.hpp"
 #include "CompactTree.hpp"
 
+#include "../test/Benchmark.hpp"
+
 struct ModelViewer {
     Bundle bundle;
 
@@ -135,9 +137,6 @@ struct ModelViewer {
                 if (ImGui::Button("Load tree"))
                     loadTree();
 
-                if (ImGui::Button("Print position"))
-                    printCamPosition();
-
                 ImGui::End();
             }
 
@@ -157,14 +156,7 @@ struct ModelViewer {
 
     CompactTree octree;
 
-    void printCamPosition() {
-        std::cout << glm::to_string(bundle.cameras.front().camera.view) << std::endl;
-//        std::cout << glm::to_string(renderCamera.view) << std::endl;
-//        std::cout << glm::to_string(renderCamera.getViewProj()) << std::endl;
-    }
-
     void loadTree() {
-//        octree = Octree("out/0.tree");
         model.updateTree(octree);
     }
 
@@ -172,4 +164,17 @@ struct ModelViewer {
         bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
         octree(octreePath)
     {}
+
+
+    Benchmark benchmark {context};
+
+    void runBenchmark() {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        loadTree();
+
+        benchmark.start(model);
+        benchmark.analyze();
+    }
 };

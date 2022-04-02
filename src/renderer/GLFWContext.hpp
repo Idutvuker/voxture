@@ -45,7 +45,7 @@ struct GLFWContext {
         if (!gladLoadGLLoader(GLADloadproc(glfwGetProcAddress)))
             throw std::runtime_error("GLAD failed to initialize");
 
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();

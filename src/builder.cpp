@@ -15,18 +15,14 @@
 #include "outofcore/CompactTree.hpp"
 
 int main() {
-//    Config config("resources/config.txt");
-//
-//    DiskTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
-//    builder.buildAll();
+    Config config("resources/config.txt");
 
+    DiskTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
+    fs::path output = builder.buildAll();
 
-    Octree octree("out/0_32.tree");
-    std::cout << "Octree loaded " << octree.data.size() << std::endl;
-
+    Octree octree(output.string());
     CompactTree compactTree(octree);
-    std::cout << compactTree.data.size() << std::endl;
-    compactTree.saveToDisk("compact/saharov.ctree");
+    compactTree.saveToDisk(config.builderOutPath + "final.ctree");
 
     return 0;
 }
