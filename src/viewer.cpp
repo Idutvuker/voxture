@@ -7,7 +7,7 @@ int main() {
         Config config("resources/config.txt");
 
         ModelViewer app(config.viewerBundlePath, config.viewerTreePath);
-        app.runBenchmark();
+        app.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }

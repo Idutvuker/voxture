@@ -65,9 +65,6 @@ struct ModelViewer {
 
     DebugDraw debugDraw {};
 
-    const glm::mat4 &camView = bundle.cameras.front().camera.view;
-    std::vector <glm::vec3> debugPoints = {glm::vec3(camView[3])};
-
     void draw() {
         glm::mat4 MVP;
         if (useBundleCamera) {
@@ -161,7 +158,7 @@ struct ModelViewer {
     }
 
     ModelViewer(const std::string &bundlePath, const std::string &octreePath) :
-        bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
+        bundle(bundlePath + "model.ply"),
         octree(octreePath)
     {}
 

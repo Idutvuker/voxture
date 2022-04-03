@@ -29,6 +29,10 @@ struct CompactTree {
 
     std::vector<Node> data;
 
+    CompactTree() {
+        data.emplace_back();
+    }
+
     explicit CompactTree(const Octree &octree) {
         std::queue<u32> nodeQueue;
         nodeQueue.push(0);
@@ -55,8 +59,6 @@ struct CompactTree {
                 }
             }
 
-            Node n = data[cur];
-
             cur += 1;
         }
     }
@@ -74,4 +76,47 @@ struct CompactTree {
         while (input.read(reinterpret_cast<char *>(&node), sizeof(Node)))
             data.push_back(node);
     }
+
+    CompactTree(const std::string &inPath, bool) {
+        std::ifstream input(inPath, std::ios::in | std::ios::binary);
+
+        std::queue<u32> nodeQueue;
+        nodeQueue.push(0);
+
+        data.emplace_back();
+        size_t cur = 0;
+
+        while (!nodeQueue.empty()) {
+            if (cur % 1000 == 0) {
+                printf("\r%zu", cur);
+            }
+            fflush(stdout);
+
+            u32 v = nodeQueue.front();
+            nodeQueue.pop();
+
+            Octree::Node oldNode;
+            input.seekg(int64_t(v * sizeof(oldNode)), std::ios::beg);
+            input.read(reinterpret_cast<char *>(&oldNode), sizeof(oldNode));
+
+            data[cur].meta = (~Node::childMask) & oldNode.color;
+            data[cur].children = data.size();
+
+            for (u32 i = 0; i < oldNode.children.size(); i++) {
+                u32 childOffs = oldNode.children[i];
+
+                if (childOffs != 0) {
+                    nodeQueue.push(v + childOffs);
+
+                    data[cur].meta |= (1 << i << Node::maskOffset);
+                    data.emplace_back();
+                }
+            }
+
+            cur += 1;
+        }
+
+        printf("Done!\n");
+    }
+
 };

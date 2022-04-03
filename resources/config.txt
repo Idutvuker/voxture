@@ -1,2 +1,2 @@
-resources/saharov/ out/
-resources/saharov/ compact/saharov.ctree
+resources/blicky/ out/
+resources/saharov/ compact/test.ctree

@@ -2,27 +2,16 @@
 
 #include "util/Config.hpp"
 
-//int main() {
-//    Config config("resources/config.txt");
-//
-//    DiskTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
-//    builder.buildAllTrees();
-//    builder.mergeAll();
-//
-//    return 0;
-//}
-
 #include "outofcore/CompactTree.hpp"
 
 int main() {
-    Config config("resources/config.txt");
+//    Config config("resources/config.txt");
+//
+//    DiskTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
+//    fs::path output = builder.buildAll();
 
-    DiskTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
-    fs::path output = builder.buildAll();
-
-    Octree octree(output.string());
-    CompactTree compactTree(octree);
-    compactTree.saveToDisk(config.builderOutPath + "final.ctree");
+    CompactTree tree("outSah/join_31.tree", false);
+    tree.saveToDisk("compact/test.ctree");
 
     return 0;
 }
