@@ -1,2 +1,2 @@
 resources/blicky/ out/
-resources/tiny_model/ compact/empty.ctree
+resources/citywall/ compact/output.ctree

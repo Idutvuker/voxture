@@ -73,4 +73,16 @@ struct SimpleRenderer {
             glfwSwapBuffers(context.window);
         }
     }
+
+    Benchmark benchmark {context};
+
+    void runBenchmark() {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
+        loadTexture();
+
+        benchmark.start(model);
+        benchmark.analyze();
+    }
 };

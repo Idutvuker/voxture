@@ -31,7 +31,7 @@ struct Benchmark {
         return camera.getViewProj();
     }
 
-    void start(const Model &model) {
+    void start(const ModelInterface &model) {
         stamp = glfwGetTime();
 
         for (size_t frame = 0; frame < FRAMES; frame++) {
