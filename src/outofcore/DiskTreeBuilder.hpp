@@ -51,6 +51,8 @@ struct DiskTreeBuilder {
         fs::remove(leftTree);
         fs::remove(rightTree);
 
+        std::cout << "Done: " << left << ' ' << right << std::endl;
+
         return newPath;
     }
 
