@@ -15,7 +15,7 @@
 #include "../test/Benchmark.hpp"
 
 struct ModelViewer {
-    Bundle bundle;
+    Bundle<> bundle;
 
     GLFWContext context;
     Resources res;

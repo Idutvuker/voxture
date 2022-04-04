@@ -17,7 +17,7 @@
 namespace fs = std::filesystem;
 
 struct DiskTreeBuilder {
-    Bundle bundle;
+    Bundle<> bundle;
     std::string outputPath;
 
     GLFWContext context {100, 100, false};

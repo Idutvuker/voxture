@@ -11,14 +11,18 @@
 
 namespace fs = std::filesystem;
 
+template <typename TriType = Triangle>
 struct Bundle {
-    std::vector<Triangle> mesh;
+    std::vector<TriType> mesh;
     std::vector<BundleCamera> cameras;
 
     explicit Bundle(const fs::path &meshFilepath) : Bundle(meshFilepath, fs::path(), fs::path()) {};
 
     Bundle(const fs::path &meshFilepath, const fs::path &bundleOutFilepath, const fs::path &listFilepath, bool normalize = true) {
-        getTriangles(meshFilepath.string(), mesh).assertOK();
+        if constexpr (std::is_same_v<TriType, Triangle>)
+            getTriangles(meshFilepath.string(), mesh).assertOK();
+        else
+            getTexTriangles(meshFilepath.string(), mesh).assertOK();
 
         if (!bundleOutFilepath.empty())
             loadCameras(bundleOutFilepath);

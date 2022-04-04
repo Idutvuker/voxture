@@ -53,22 +53,22 @@ struct Model : ModelInterface {
     }
 };
 
-struct AtlasModel : ModelInterface {
+struct TexturedModel : ModelInterface {
     GLuint VAO;
     GLuint VBO;
     GLuint SSBO;
 
-    const std::vector<Triangle> &mesh;
+    const std::vector<TexTriangle> &mesh;
     const ShaderProgram &shader;
 
-    AtlasModel(const std::vector<Triangle> &_mesh, const ShaderProgram &_shader) : mesh(_mesh), shader(_shader) {
+    TexturedModel(const std::vector<TexTriangle> &_mesh, const ShaderProgram &_shader) : mesh(_mesh), shader(_shader) {
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
 
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(mesh.size() * sizeof(Triangle)), mesh.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(mesh.size() * sizeof(TexTriangle)), mesh.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
@@ -89,6 +89,6 @@ struct AtlasModel : ModelInterface {
 
         glBindVertexArray(VAO);
 
-        glDrawArrays(GL_TRIANGLES, 0, GLsizei(5 * mesh.size()));
+        glDrawArrays(GL_TRIANGLES, 0, GLsizei(3 * mesh.size()));
     }
 };

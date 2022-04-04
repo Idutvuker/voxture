@@ -3,11 +3,12 @@
 #include "../util/Status.hpp"
 
 #include <iostream>
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 #include <vector>
 #include <obj_loader.h>
 
 #include "happly.h"
+#include "glm/gtx/string_cast.hpp"
 
 struct Triangle {
     glm::vec3 a;
@@ -51,6 +52,77 @@ inline Status getTriangles(const std::string &filepath, std::vector<Triangle> &r
         }
 
         res.push_back(newTri);
+    }
+
+    return Status::ok();
+}
+
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec2 texCoord;
+};
+
+struct TexTriangle {
+    Vertex a;
+    Vertex b;
+    Vertex c;
+
+    glm::vec3 &operator[](size_t index) {
+        if (index == 0)
+            return a.pos;
+        if (index == 1)
+            return b.pos;
+        return c.pos;
+    }
+
+    const glm::vec3 &operator[](size_t index) const {
+        if (index == 0)
+            return a.pos;
+        if (index == 1)
+            return b.pos;
+        return c.pos;
+    }
+};
+
+static_assert(sizeof(Vertex) == 20);
+static_assert(sizeof(TexTriangle) == 60);
+
+inline Status getTexTriangles(const std::string &filepath, std::vector<TexTriangle> &res) {
+    happly::PLYData plyData(filepath);
+
+    std::vector<float> vPosX = plyData.getElement("vertex").getProperty<float>("x");
+    std::vector<float> vPosY = plyData.getElement("vertex").getProperty<float>("y");
+    std::vector<float> vPosZ = plyData.getElement("vertex").getProperty<float>("z");
+
+    std::vector<std::vector<size_t>> fInd = plyData.getFaceIndices<size_t>();
+    std::vector<std::vector<float>> texCoords = plyData.getElement("face").getListProperty<float>("texcoord");
+
+    for (size_t i = 0; i < fInd.size(); i++) {
+        const auto &triInd = fInd[i];
+        assert(triInd.size() == 3);
+
+        const auto &triTexCoord = texCoords[i];
+        assert(triTexCoord.size() == 6);
+
+        TexTriangle newTri;
+        for (int i = 0; i < 3; i++) {
+            size_t idx = triInd[i];
+            newTri[i] = glm::vec3(vPosX[idx], vPosY[idx], vPosZ[idx]);
+        }
+
+        newTri.a.texCoord = {triTexCoord[0], triTexCoord[1]};
+        newTri.b.texCoord = {triTexCoord[2], triTexCoord[3]};
+        newTri.c.texCoord = {triTexCoord[4], triTexCoord[5]};
+
+//        std::cout << glm::to_string(newTri.a.texCoord) << std::endl;
+//        std::cout << glm::to_string(newTri.b.texCoord) << std::endl;
+//        std::cout << glm::to_string(newTri.c.texCoord) << std::endl;
+
+        res.push_back(newTri);
+    }
+
+    for (const auto &tri: texCoords) {
+        assert(tri.size() == 6);
     }
 
     return Status::ok();

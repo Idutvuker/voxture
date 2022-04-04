@@ -1,2 +1,2 @@
 resources/blicky/ out/
-resources/saharov/ compact/test.ctree
+resources/tiny_model/ compact/empty.ctree
