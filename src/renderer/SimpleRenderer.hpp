@@ -41,7 +41,9 @@ struct SimpleRenderer {
 
         auto prevTime = float(glfwGetTime());
         while (!glfwWindowShouldClose(context.window)) {
-            float delta = float(glfwGetTime()) - prevTime;
+            float stamp = float(glfwGetTime());
+            float delta = stamp - prevTime;
+            prevTime = stamp;
 
             glfwPollEvents();
 
@@ -55,6 +57,9 @@ struct SimpleRenderer {
             {
                 ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
+
+                float fps = 1.f / delta;
+                ImGui::Text("FPS: %f %f", fps, delta);
 
                 ImGui::End();
             }

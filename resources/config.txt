@@ -1,2 +1,2 @@
-resources/blicky/ out/
-resources/citywall/ compact/output.ctree
+resources/saharov/ presentation/
+resources/saharov/ presentation/test1.ctree

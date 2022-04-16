@@ -8,8 +8,8 @@ int main() {
     try {
         Config config("resources/config.txt");
 
-//        ModelViewer app(config.viewerBundlePath, config.viewerTreePath);
-        SimpleRenderer app(config.viewerBundlePath);
+        ModelViewer app(config.viewerBundlePath, config.viewerTreePath);
+//        SimpleRenderer app(config.viewerBundlePath);
         app.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;

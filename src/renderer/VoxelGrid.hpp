@@ -151,7 +151,7 @@ struct VoxelGrid {
 
             const auto &node = octree.data[id];
 
-            if (node.isLeaf()) {
+            if (level == 5) {
                 mat4 base = scale(mat4(1), vec3(voxelSize));
                 vec3 pos(vox);
 
@@ -161,7 +161,7 @@ struct VoxelGrid {
                 glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
 
 //                vec3 color3f = fract(pos * voxelSize * 13643.3545f);
-                vec3 color3f = vec3(node.color >> 16, (node.color >> 8) & 0xff, (node.color) & 0xff) / 255.f;
+                vec3 color3f = vec3((node.color >> 16) & 0xff, (node.color >> 8) & 0xff, (node.color) & 0xff) / 255.f;
                 glUniform3fv(ColorLoc, 1, value_ptr(color3f));
 
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);

@@ -17,7 +17,7 @@
 struct ModelViewer {
     Bundle<> bundle;
 
-    GLFWContext context;
+    GLFWContext context {900, 600};
     Resources res;
 
     VoxelGrid voxelGrid;
@@ -78,7 +78,7 @@ struct ModelViewer {
 //            model.draw(bundle.cameras.front().camera.getViewProj());
         }
         else if (drawMode == DrawMode::VOXELS) {
-//            voxelGrid.drawOctree(renderCamera, res, octrees[bundleCameraID]);
+//            voxelGrid.drawOctree(renderCamera, res, rawOctree);
 //            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
 //            voxelGrid.drawOctree(renderCamera, res, octree);
         }
@@ -101,7 +101,9 @@ struct ModelViewer {
 
         auto prevTime = float(glfwGetTime());
         while (!glfwWindowShouldClose(context.window)) {
-            float delta = float(glfwGetTime()) - prevTime;
+            float stamp = float(glfwGetTime());
+            float delta = stamp - prevTime;
+            prevTime = stamp;
 
             glfwPollEvents();
 
@@ -141,7 +143,7 @@ struct ModelViewer {
 
             update(delta);
 
-            glClearColor(0.3f, 0.2f, 0.2f, 1.0f);
+            glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             draw();

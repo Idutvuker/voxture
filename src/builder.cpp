@@ -30,7 +30,7 @@ int main() {
     std::cout << "Build finished! Elapsed: " << elapsed << std::endl;
 
     CompactTree tree(output.string(), false);
-    tree.saveToDisk("compact/output.ctree");
+    tree.saveToDisk("presentation/test1.ctree");
 
     return 0;
 }
