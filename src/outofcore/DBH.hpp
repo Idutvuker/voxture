@@ -150,8 +150,6 @@ struct DBH {
 
         auto res = getMax(0, glm::uvec2(0), from, to);
 
-//        Log.info({rangeMin, rangeMax, "visited:", visited});
-
         return res;
     }
 
@@ -179,36 +177,17 @@ struct DBH {
 
         uint size = max(diff.x, diff.y);
 
-        if (size == 0)
-            return -1;
+        uint level = min(uint(powerOfTwo(size) + 3), uint(data.size() - 1));
 
-        float res = 0.0;
-
-        for (uint x = from.x; x <= to.x; x++) {
-            for (uint y = from.y; y <= to.y; y++) {
-                res = max(res, data.front().get({x, y}));
-            }
+        if (level == 0) {
+            return 1;   // size is 0
         }
 
-        return res;
+        float approx = data[level].get(from);
 
-//        float approx = data[level].get(resFrom);
-//
-//        //        Log.info({from, to, size});
-//
-//        uint level = min(uint(powerOfTwo(size) + 3), uint(data.size() - 1));
-//
-//        if (level == 0) {
-//            Log.info({"Level ZERO!!", rangeMin, rangeMax, from, to});
-//            return 1;   // size is 0
-//        }
-//
-//        uvec2 resFrom = from >> level;
-//
-//        Log.info({from, to, size, level, resFrom, data[level].width, data[level].height, data[level].get(resFrom)});
-//
-//        assert(approx >= res);
-//        return data[level].get(resFrom);
+        uvec2 resFrom = from >> level;
+
+        return data[level].get(resFrom);
     }
 
     float readPixel(const glm::vec2 &texCoord) const {

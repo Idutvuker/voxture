@@ -4,13 +4,13 @@
 
 struct Benchmark {
     static constexpr size_t FRAMES = 60 * 10;
-    double stamp;
+    double stamp = 0;
 
     std::vector<double> history;
 
     const GLFWContext &context;
     RenderCamera camera = RenderCamera {float(context.windowWidth) / float(context.windowHeight)};
-    Benchmark(const GLFWContext &_context) : context(_context) {}
+    explicit Benchmark(const GLFWContext &_context) : context(_context) {}
 
     void measure() {
         double newStamp = glfwGetTime();

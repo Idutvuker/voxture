@@ -1,11 +1,11 @@
 #pragma once
 
 #include <iostream>
+#include "../renderer/Renderer.hpp"
 
 struct ProjectorTest {
     GLFWContext context;
     Resources resources;
-
 
     GLuint programID;
 

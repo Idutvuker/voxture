@@ -25,7 +25,7 @@ struct Renderer {
     Resources res;
     VoxelGrid voxelGrid;
 
-    Bundle &bundle;
+    Bundle<> &bundle;
     Voxelizer::Octree &octree;
 
     GLuint VAO = 0;
@@ -64,7 +64,6 @@ struct Renderer {
     void initDepthBuffer() {
         glGenTextures(1, &depthTex);
         glBindTexture(GL_TEXTURE_2D, depthTex);
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, context.WINDOW_WIDTH, context.WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, depthMap.width, depthMap.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -104,20 +103,6 @@ struct Renderer {
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
-
-//        GLuint texture;
-//
-//        glGenTextures(1, &texture);
-//        glBindTexture(GL_TEXTURE_2D, texture);
-//
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, photo.width, photo.height, 0, GL_RGB, GL_UNSIGNED_BYTE, photo.image.data());
-//        glGenerateMipmap(GL_TEXTURE_2D);
-
     }
 
     void drawImage() {
@@ -162,7 +147,7 @@ struct Renderer {
         return (2 * renderCamera.NEAR * renderCamera.FAR) / (renderCamera.FAR + renderCamera.NEAR - depth * (renderCamera.FAR - renderCamera.NEAR));
     }
 
-    Image<float> depthMap {bundle.cameras.front().photo->width, bundle.cameras.front().photo->height};
+    Image<float> depthMap {int(bundle.cameras.front().photoInfo.dims.x), int(bundle.cameras.front().photoInfo.dims.y)};
 
     void updateDepthMap(const glm::mat4 &MVPMat) {
         glViewport(0, 0, depthMap.width, depthMap.height);
@@ -170,7 +155,7 @@ struct Renderer {
         glClear(GL_DEPTH_BUFFER_BIT);
         drawModel(MVPMat);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, context.WINDOW_WIDTH, context.WINDOW_HEIGHT);
+        glViewport(0, 0, context.windowWidth, context.windowHeight);
 
         glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depthMap.image.data());
     }
@@ -181,9 +166,9 @@ struct Renderer {
         auto &lastLevel = octree.levels.back();
         auto &colors = octree.colors;
 
-//        for (const BundleCamera &staticCam: bundle.cameras)
-        const BundleCamera &staticCam = bundle.cameras[staticCameraID];
-        {
+        for (const BundleCamera &staticCam: bundle.cameras) {
+            auto photo = staticCam.photoInfo.loadImage();
+
             glm::mat4 viewProj = staticCam.camera.projection * staticCam.camera.view;
             updateDepthMap(viewProj);
 
@@ -200,7 +185,7 @@ struct Renderer {
                     const float EPS = 12.f / float(lastLevel.getGridSize());
 
                     if (modelDepth + EPS > voxelDepth)
-                        colors[voxel] = staticCam.photo->getByTexCoord({texCoord.x, -texCoord.y});
+                        colors[voxel] = photo.getByTexCoord({texCoord.x, -texCoord.y});
                 }
             }
         }
@@ -232,8 +217,6 @@ struct Renderer {
                 ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
-                ImGui::SliderFloat("FOV", &renderCamera.FOV, 10, 150);
-
                 ImGui::SliderInt("Tree level", &treeLevel, 0, int(octree.levels.size()) - 1);
                 ImGui::Text("Voxels: %d", int(octree.levels.empty() ? 0 : octree.levels[treeLevel].set.size()));
 
@@ -241,8 +224,7 @@ struct Renderer {
                 ImGui::Checkbox("Draw Image", &imageMode);
 
                 ImGui::Checkbox("Static BundleCamera", &staticCameraMode);
-                if (ImGui::SliderInt("BundleCamera ID", &staticCameraID, 0, int(bundle.cameras.size() - 1))) {}
-//                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shared.bundle.cameras[staticCameraID].photo->width, shared.bundle.cameras[staticCameraID].photo->height, 0, GL_RGB, GL_UNSIGNED_BYTE, shared.bundle.cameras[staticCameraID].photo->image.data());
+                ImGui::SliderInt("BundleCamera ID", &staticCameraID, 0, int(bundle.cameras.size() - 1));
 
                 if (ImGui::Button("Project"))
                     project();
@@ -293,10 +275,10 @@ struct Renderer {
         initImage();
     }
 
-    explicit Renderer(Bundle &bundle, Voxelizer::Octree &octree) :
+    explicit Renderer(Bundle<> &bundle, Voxelizer::Octree &octree) :
             bundle(bundle),
             octree(octree),
-            renderCamera(float(context.WINDOW_WIDTH) / float(context.WINDOW_HEIGHT))
+            renderCamera(float(context.windowWidth) / float(context.windowHeight))
     {
         initRes();
     }

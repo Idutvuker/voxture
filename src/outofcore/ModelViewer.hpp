@@ -75,12 +75,6 @@ struct ModelViewer {
 
         if (drawMode == DrawMode::MODEL) {
             model.draw(MVP);
-//            model.draw(bundle.cameras.front().camera.getViewProj());
-        }
-        else if (drawMode == DrawMode::VOXELS) {
-//            voxelGrid.drawOctree(renderCamera, res, rawOctree);
-//            voxelGrid.drawFromVec(renderCamera, res, (1 << treeBuilder.maxLevel), treeBuilder.voxels);
-//            voxelGrid.drawOctree(renderCamera, res, octree);
         }
         else {
             viewPlane.draw();

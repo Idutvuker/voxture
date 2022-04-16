@@ -338,15 +338,6 @@ struct DiskTree {
                 input.read(reinterpret_cast<char *>(&node), sizeof(Node));
                 return node;
             }
-
-//            explicit OctreeLoader(const std::string &filepath) : octree(filepath) {}
-//
-//            size_t i = 0;
-//            Node getNode() {
-//                auto res = octree.data[i];
-//                i++;
-//                return res;
-//            }
         };
 
         OctreeLoader tree1;

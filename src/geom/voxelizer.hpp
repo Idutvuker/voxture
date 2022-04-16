@@ -83,8 +83,6 @@ namespace Voxelizer {
         explicit Octree(const std::vector<Triangle> &mesh) {
             VoxelSet voxelSet = voxelize(mesh);
 
-//            colors = colorize(voxelSet);
-
             buildLevels(voxelSet);
             buildRaw();
         }

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <string>
+#include "../geom/Triangle.hpp"
+#include "Status.hpp"
+
 Status writePLY_triangles(const std::vector<Triangle> &data) {
     std::string filename = "output.ply";
 

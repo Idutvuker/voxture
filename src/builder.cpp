@@ -27,7 +27,7 @@ int main() {
     fs::path output = builder.buildAll();
     float elapsed = tick();
 
-    std::cout << "Build finished! Elapsed: " << elapsed << std::endl;
+    std::cout << "Build finished! Elapsed time: " << elapsed << std::endl;
 
     CompactTree tree(output.string(), false);
     tree.saveToDisk("presentation/test1.ctree");

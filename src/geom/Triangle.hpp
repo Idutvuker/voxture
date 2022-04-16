@@ -114,10 +114,6 @@ inline Status getTexTriangles(const std::string &filepath, std::vector<TexTriang
         newTri.b.texCoord = {triTexCoord[2], triTexCoord[3]};
         newTri.c.texCoord = {triTexCoord[4], triTexCoord[5]};
 
-//        std::cout << glm::to_string(newTri.a.texCoord) << std::endl;
-//        std::cout << glm::to_string(newTri.b.texCoord) << std::endl;
-//        std::cout << glm::to_string(newTri.c.texCoord) << std::endl;
-
         res.push_back(newTri);
     }
 
