@@ -1,14 +1,14 @@
 #pragma once
 
-#include <glm/gtc/type_ptr.hpp>
-#include "CompactTree.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "../data/CompactOctree.hpp"
+#include "mygl.hpp"
 
-struct ModelInterface {
-    virtual void updateTree(const CompactTree &octree) = 0;
+struct Drawable {
     virtual void draw(const glm::mat4 &MVPMat) const = 0;
 };
 
-struct Model : ModelInterface {
+struct OctreeTexModel : Drawable {
     GLuint VAO;
     GLuint VBO;
     GLuint SSBO;
@@ -16,7 +16,7 @@ struct Model : ModelInterface {
     const std::vector<Triangle> &mesh;
     const ShaderProgram &shader;
 
-    Model(const std::vector<Triangle> &_mesh, const ShaderProgram &_shader) : mesh(_mesh), shader(_shader) {
+    OctreeTexModel(const std::vector<Triangle> &_mesh, const ShaderProgram &_shader) : mesh(_mesh), shader(_shader) {
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
 
@@ -33,9 +33,9 @@ struct Model : ModelInterface {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
     }
 
-    void updateTree(const CompactTree &octree) override {
+    void updateTree(const CompactOctree &octree) {
         glBufferData(GL_SHADER_STORAGE_BUFFER,
-                     GLsizeiptr(octree.data.size() * sizeof(CompactTree::Node)),
+                     GLsizeiptr(octree.data.size() * sizeof(CompactOctree::Node)),
                      octree.data.data(), GL_DYNAMIC_DRAW);
     }
 
@@ -53,7 +53,7 @@ struct Model : ModelInterface {
     }
 };
 
-struct TexturedModel : ModelInterface {
+struct UVTexModel : Drawable {
     GLuint VAO;
     GLuint VBO;
     GLuint SSBO;
@@ -61,7 +61,7 @@ struct TexturedModel : ModelInterface {
     const std::vector<TexTriangle> &mesh;
     const ShaderProgram &shader;
 
-    TexturedModel(const std::vector<TexTriangle> &_mesh, const ShaderProgram &_shader) : mesh(_mesh), shader(_shader) {
+    UVTexModel(const std::vector<TexTriangle> &_mesh, const ShaderProgram &_shader) : mesh(_mesh), shader(_shader) {
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
 
@@ -76,8 +76,6 @@ struct TexturedModel : ModelInterface {
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(1);
     }
-
-    void updateTree(const CompactTree &octree) override {}
 
     void draw(const glm::mat4 &MVPMat) const override {
         using namespace glm;

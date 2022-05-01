@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "../renderer/Model.hpp"
 
 struct Benchmark {
     static constexpr size_t FRAMES = 60 * 10;
@@ -31,7 +32,7 @@ struct Benchmark {
         return camera.getViewProj();
     }
 
-    void start(const ModelInterface &model) {
+    void start(const Drawable &model) {
         stamp = glfwGetTime();
 
         for (size_t frame = 0; frame < FRAMES; frame++) {

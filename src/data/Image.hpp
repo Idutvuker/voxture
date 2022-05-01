@@ -1,10 +1,10 @@
 #pragma once
 
 #include <string>
-#include <stb_image.h>
+#include "stb_image.h"
 #include <vector>
 #include <cstdint>
-#include <glm/glm.hpp>
+#include "glm/glm.hpp"
 #include <cstring>
 
 template<typename T>

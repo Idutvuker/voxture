@@ -1,8 +1,8 @@
-#include "outofcore/DiskTreeBuilder.hpp"
+#include "builder/FullTreeBuilder.hpp"
 
 #include "util/Config.hpp"
 
-#include "outofcore/CompactTree.hpp"
+#include "data/CompactOctree.hpp"
 
 std::chrono::steady_clock::time_point stamp = std::chrono::steady_clock::now();
 
@@ -21,15 +21,15 @@ float tick() {
 int main() {
     Config config("resources/config.txt");
 
-    DiskTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
+    FullTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
 
     tick();
-    fs::path output = builder.buildAll();
+    fs::path output = builder.buildFull();
     float elapsed = tick();
 
     std::cout << "Build finished! Elapsed time: " << elapsed << std::endl;
 
-    CompactTree tree(output.string(), false);
+    CompactOctree tree(output.string(), false);
     tree.saveToDisk("presentation/test1.ctree");
 
     return 0;

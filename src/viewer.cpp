@@ -1,14 +1,14 @@
-#include "outofcore/ModelViewer.hpp"
+#include "renderer/ModelViewerOctree.hpp"
 
 #include "util/Config.hpp"
 
-#include "renderer/SimpleRenderer.hpp"
+#include "renderer/ModelViewerUV.hpp"
 
 int main() {
     try {
         Config config("resources/config.txt");
 
-        ModelViewer app(config.viewerBundlePath, config.viewerTreePath);
+        ModelViewerOctree app(config.viewerBundlePath, config.viewerTreePath);
 //        SimpleRenderer app(config.viewerBundlePath);
         app.run();
     } catch (const std::exception &e) {

@@ -4,10 +4,10 @@
 #include "../renderer/GLFWContext.hpp"
 #include "../bundle/Bundle.hpp"
 #include "../renderer/Resources.hpp"
-#include "TreeBuilderRays.hpp"
-#include "Octree.hpp"
-#include "Model.hpp"
-#include "DBH.hpp"
+#include "PartialTreeBuilder.hpp"
+#include "../data/RawOctree.hpp"
+#include "../renderer/Model.hpp"
+#include "DiskTree.hpp"
 
 #include <functional>
 #include <filesystem>
@@ -16,16 +16,16 @@
 
 namespace fs = std::filesystem;
 
-struct DiskTreeBuilder {
+struct FullTreeBuilder {
     Bundle<> bundle;
     std::string outputPath;
 
     GLFWContext context {100, 100, false};
     Resources res;
 
-    Model model{bundle.mesh, res.testSP};
+    OctreeTexModel model{bundle.mesh, res.testSP};
 
-    TreeBuilderRays treeBuilder;
+    PartialTreeBuilder treeBuilder;
     std::function<void(const glm::mat4&)> drawFunc = [this] (const glm::mat4& MVPMat) { model.draw(MVPMat); };
 
     fs::path buildRec(uint left, uint right) {
@@ -56,7 +56,7 @@ struct DiskTreeBuilder {
         return newPath;
     }
 
-    fs::path buildAll() {
+    fs::path buildFull() {
         return buildRec(0, bundle.cameras.size());
     }
 
@@ -66,7 +66,7 @@ struct DiskTreeBuilder {
         float focalLength = cam.focalLength;
 
         DepthReader depthReader(cam.photoInfo.dims);
-        auto depthMap = depthReader.calcDepthMap(drawFunc, MVP);
+        auto depthMap = depthReader.readDepthMap(drawFunc, MVP);
 
         std::cout << "Building tree " << cameraId << std::endl;
 
@@ -112,7 +112,7 @@ struct DiskTreeBuilder {
             glDeleteTextures(1, &depthTex);
         }
 
-        Image<float> calcDepthMap(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4 &MVPMat) {
+        Image<float> readDepthMap(const std::function<void(const glm::mat4&)> &drawFunc, const glm::mat4 &MVPMat) const {
             glViewport(0, 0, GLsizei(dims.x), GLsizei(dims.y));
             glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
@@ -127,7 +127,7 @@ struct DiskTreeBuilder {
         }
     };
 
-    explicit DiskTreeBuilder(const std::string &bundlePath, const std::string &_outputPath) :
+    explicit FullTreeBuilder(const std::string &bundlePath, const std::string &_outputPath) :
         bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
         outputPath(_outputPath)
         {

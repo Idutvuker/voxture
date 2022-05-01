@@ -4,12 +4,11 @@
 #include "../geom/Triangle.hpp"
 #include "../geom/Camera.hpp"
 #include "ShaderProgram.hpp"
-#include "../geom/voxelizer.hpp"
 #include "../util/Logger.hpp"
 #include "Resources.hpp"
-#include "../outofcore/Octree.hpp"
+#include "../data/RawOctree.hpp"
 #include "../common/constants.hpp"
-#include "../outofcore/CompactTree.hpp"
+#include "../data/CompactOctree.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -69,37 +68,6 @@ struct VoxelGrid {
         glEnableVertexAttribArray(0);
     }
 
-    void draw(const Camera &camera, const Resources &res, const Voxelizer::VoxelSet &voxelSet,
-              const Voxelizer::VoxelColors &colors) {
-        using namespace glm;
-
-        glBindVertexArray(VAO);
-
-        res.voxelSP.use();
-        GLint MVPLoc = glGetUniformLocation(res.voxelSP.programID, "uModelViewProjMat");
-        GLint ColorLoc = glGetUniformLocation(res.voxelSP.programID, "uColor");
-
-        const float voxelSize = 1.f / float(voxelSet.getGridSize());
-
-        mat4 ViewProjMat = camera.projection * camera.view;
-        mat4 base = scale(mat4(1), vec3(voxelSize));
-
-        for (const auto &voxel: voxelSet.set) {
-            vec3 pos = vec3(voxel.pos);
-            mat4 model = translate(base, pos);
-            mat4 MVPMat = ViewProjMat * model;
-
-            glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
-
-            if (auto it = colors.find(voxel); it != colors.end()) {
-                vec3 color = vec3(it->second) / 255.f;
-                glUniform3fv(ColorLoc, 1, value_ptr(color));
-            }
-
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
-        }
-    }
-
     void drawFromVec(const Camera &camera, const Resources &res, uint gridSize,
                      const std::vector<glm::uvec3> &voxels) {
         using namespace glm;
@@ -135,9 +103,9 @@ struct VoxelGrid {
         glm::mat4 ViewProjMat;
         GLint MVPLoc;
         GLint ColorLoc;
-        const Octree &octree;
+        const RawOctree &octree;
 
-        OctreeRenderer(const glm::mat4 &_viewProjMat, GLint _mvpLoc, GLint _colorLoc, const Octree &_octree) :
+        OctreeRenderer(const glm::mat4 &_viewProjMat, GLint _mvpLoc, GLint _colorLoc, const RawOctree &_octree) :
                 ViewProjMat(_viewProjMat),
                 MVPLoc(_mvpLoc),
                 ColorLoc(_colorLoc),
@@ -171,7 +139,7 @@ struct VoxelGrid {
         }
     };
 
-    void drawOctree(const Camera &camera, const Resources &res, const Octree &octree) const {
+    void drawOctree(const Camera &camera, const Resources &res, const RawOctree &octree) const {
         if (octree.data.empty())
             return;
 

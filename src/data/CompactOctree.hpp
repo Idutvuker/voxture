@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Octree.hpp"
+#include "RawOctree.hpp"
 #include <fstream>
 #include <vector>
 #include <queue>
 
-struct CompactTree {
+struct CompactOctree {
     using u32 = uint32_t;
     using u8 = uint8_t;
 
@@ -29,11 +29,11 @@ struct CompactTree {
 
     std::vector<Node> data;
 
-    CompactTree() {
+    CompactOctree() {
         data.emplace_back();
     }
 
-    explicit CompactTree(const Octree &octree) {
+    explicit CompactOctree(const RawOctree &octree) {
         std::queue<u32> nodeQueue;
         nodeQueue.push(0);
 
@@ -44,7 +44,7 @@ struct CompactTree {
             u32 v = nodeQueue.front();
             nodeQueue.pop();
 
-            const Octree::Node &oldNode = octree.data[v];
+            const RawOctree::Node &oldNode = octree.data[v];
             data[cur].meta = (~Node::childMask) & oldNode.color;
             data[cur].children = data.size();
 
@@ -69,7 +69,7 @@ struct CompactTree {
         output.write(reinterpret_cast<const char *>(data.data()), sizeof(Node) * data.size());
     }
 
-    explicit CompactTree(const std::string &path) {
+    explicit CompactOctree(const std::string &path) {
         std::ifstream input(path, std::ios::in | std::ios::binary);
 
         Node node;
@@ -77,7 +77,7 @@ struct CompactTree {
             data.push_back(node);
     }
 
-    CompactTree(const std::string &inPath, bool) {
+    CompactOctree(const std::string &inPath, bool) {
         std::ifstream input(inPath, std::ios::in | std::ios::binary);
 
         std::queue<u32> nodeQueue;
@@ -95,7 +95,7 @@ struct CompactTree {
             u32 v = nodeQueue.front();
             nodeQueue.pop();
 
-            Octree::Node oldNode;
+            RawOctree::Node oldNode;
             input.seekg(int64_t(v * sizeof(oldNode)), std::ios::beg);
             input.read(reinterpret_cast<char *>(&oldNode), sizeof(oldNode));
 

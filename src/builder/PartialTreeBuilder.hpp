@@ -1,22 +1,21 @@
 #pragma once
 
-#include "Octree.hpp"
-#include "DBH.hpp"
+#include "../data/RawOctree.hpp"
 #include <unordered_set>
 
-struct TreeBuilderRays {
-    uint maxLevel = 20;
+struct PartialTreeBuilder {
+    const uint maxLevel = 20;
 
     std::vector<glm::vec3> points;
 
-    Octree buildTree(const glm::mat4 &viewProjMat, float focalLength, const Image<float> &depthMap, const Image<glm::u8vec3> &photo) {
+    RawOctree buildTree(const glm::mat4 &viewProjMat, float focalLength, const Image<float> &depthMap, const Image<glm::u8vec3> &photo) {
         assert(depthMap.width == photo.width && depthMap.height == photo.height);
 
-        Octree octree;
+        RawOctree octree;
 
         // Stores child addresses instead of offsets
         // Not ordered
-        Octree tmpOctree;
+        RawOctree tmpOctree;
 
         using namespace glm;
 
@@ -104,7 +103,7 @@ struct TreeBuilderRays {
         return octree;
     }
 
-    static uint32_t dfs(uint32_t v, const Octree &tmpOctree, Octree &octree) {
+    static uint32_t dfs(uint32_t v, const RawOctree &tmpOctree, RawOctree &octree) {
         const auto &tmpNode = tmpOctree.data[v];
 
         uint32_t id = octree.data.size();

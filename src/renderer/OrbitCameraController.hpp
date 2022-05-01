@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mygl.hpp"
+#include "GLFWContext.hpp"
 
 struct OrbitCameraController {
     RenderCamera &camera;

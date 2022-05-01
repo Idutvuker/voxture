@@ -1,21 +1,22 @@
 #pragma once
 
-#include "../outofcore/Model.hpp"
+#include "GLFWContext.hpp"
+#include "Model.hpp"
 
-struct SimpleRenderer {
+struct ModelViewerUV {
     Bundle<TexTriangle> bundle;
 
     GLFWContext context;
     Resources res;
 
-    TexturedModel model{bundle.mesh, res.texModelSP};
+    UVTexModel model{bundle.mesh, res.texModelSP};
 
     RenderCamera renderCamera{float(context.windowWidth) / float(context.windowHeight)};
     OrbitCameraController cameraController{renderCamera, context};
 
     Image<glm::u8vec3> atlas;
 
-    explicit SimpleRenderer(const std::string &bundlePath) :
+    explicit ModelViewerUV(const std::string &bundlePath) :
             bundle(bundlePath + "model.ply"),
             atlas(bundlePath + "texture.jpg") {}
 

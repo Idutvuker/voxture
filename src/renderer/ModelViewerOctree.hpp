@@ -1,20 +1,20 @@
 #pragma once
 
-#include "../renderer/VoxelGrid.hpp"
-#include "../renderer/DebugDraw.hpp"
-#include "TreeBuilderRays.hpp"
+#include "VoxelGrid.hpp"
+#include "DebugDraw.hpp"
+#include "../builder/PartialTreeBuilder.hpp"
 
-#include "DBH.hpp"
-#include "../renderer/RenderCamera.hpp"
-#include "../renderer/OrbitCameraController.hpp"
-#include "Model.hpp"
+#include "RenderCamera.hpp"
+#include "OrbitCameraController.hpp"
 #include "stb_image_write.h"
 #include "../bundle/Bundle.hpp"
-#include "CompactTree.hpp"
+#include "../data/CompactOctree.hpp"
 
+#include "GLFWContext.hpp"
 #include "../test/Benchmark.hpp"
+#include "Model.hpp"
 
-struct ModelViewer {
+struct ModelViewerOctree {
     Bundle<> bundle;
 
     GLFWContext context {900, 600};
@@ -25,7 +25,7 @@ struct ModelViewer {
     RenderCamera renderCamera {float(context.windowWidth) / float(context.windowHeight)};
     OrbitCameraController cameraController {renderCamera, context};
 
-    Model model {bundle.mesh, res.modelSP};
+    OctreeTexModel model {bundle.mesh, res.modelSP};
 
     struct ViewPlane {
         GLuint VAO;
@@ -147,13 +147,13 @@ struct ModelViewer {
         }
     }
 
-    CompactTree octree;
+    CompactOctree octree;
 
     void loadTree() {
         model.updateTree(octree);
     }
 
-    ModelViewer(const std::string &bundlePath, const std::string &octreePath) :
+    ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath) :
         bundle(bundlePath + "model.ply"),
         octree(octreePath)
     {}

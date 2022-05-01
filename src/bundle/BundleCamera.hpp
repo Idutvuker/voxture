@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include "../geom/Camera.hpp"
-#include "../common/Image.hpp"
+#include "../data/Image.hpp"
 #include "PhotoInfo.hpp"
 #include <optional>
 

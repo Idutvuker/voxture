@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ShaderProgram.hpp"
-#include "../common/Image.hpp"
+#include "../data/Image.hpp"
 
 struct Resources {
     ShaderProgram texModelSP = ShaderProgram("resources/shaders/texmodel.vert.glsl", "resources/shaders/texmodel.frag.glsl");
