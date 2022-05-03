@@ -27,35 +27,6 @@ struct ModelViewerOctree {
 
     OctreeTexModel model {bundle.mesh, res.modelSP};
 
-    struct ViewPlane {
-        GLuint VAO;
-        GLuint VBO;
-
-        const Resources &res;
-
-        ViewPlane(const Resources &_res) : res(_res) {
-            std::array<GLfloat, 6 * 3> tris = { -1, 1, 0, -1, -1, 0, 1, 1, 0, 1, 1, 0, -1, -1, 0, 1, -1, 0 };
-
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-
-            glBindVertexArray(VAO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(tris.size() * sizeof(GLfloat)), tris.data(), GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-            glEnableVertexAttribArray(0);
-        }
-
-        void draw() {
-            res.imageSP.use();
-
-            glBindVertexArray(VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-        }
-    } viewPlane { res };
-
     enum class DrawMode : int {
         MODEL, VOXELS, VIEW_PLANE
     } drawMode = DrawMode::MODEL;
@@ -74,10 +45,11 @@ struct ModelViewerOctree {
         }
 
         if (drawMode == DrawMode::MODEL) {
+//            voxelGrid.drawOctree(renderCamera, res, rawOctree);
             model.draw(MVP);
         }
-        else {
-            viewPlane.draw();
+        else if (drawMode == DrawMode::VOXELS) {
+            voxelGrid.drawCompactOctree(renderCamera, res, octree);
         }
     }
 
@@ -91,7 +63,7 @@ struct ModelViewerOctree {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        loadTree();
+        loadTexture();
 
         auto prevTime = float(glfwGetTime());
         while (!glfwWindowShouldClose(context.window)) {
@@ -125,10 +97,10 @@ struct ModelViewerOctree {
                     ImGui::Checkbox("Bundle camera", &useBundleCamera);
                 }
 
-                ImGui::Text("Voxel count: %zu", octree.data.size());
+                ImGui::Text("Voxel count: %zu", octree.dag.size());
 
                 if (ImGui::Button("Load tree"))
-                    loadTree();
+                    loadTexture();
 
                 ImGui::End();
             }
@@ -148,15 +120,19 @@ struct ModelViewerOctree {
     }
 
     CompactOctree octree;
+    RawOctree rawOctree;
 
-    void loadTree() {
+    void loadTexture() {
         model.updateTree(octree);
     }
 
     ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath) :
         bundle(bundlePath + "model.ply"),
-        octree(octreePath)
-    {}
+        rawOctree(octreePath)
+    {
+        octree = CompactOctreeBuilder(rawOctree).output;
+        std::cout << "SIZE: " << octree.dag.size() << std::endl;
+    }
 
 
     Benchmark benchmark {context};
@@ -165,7 +141,7 @@ struct ModelViewerOctree {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
-        loadTree();
+        loadTexture();
 
         benchmark.start(model);
         benchmark.analyze();

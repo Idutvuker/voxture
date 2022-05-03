@@ -4,69 +4,49 @@
 #include <fstream>
 #include <vector>
 #include <queue>
+#include <unordered_map>
 
 struct CompactOctree {
-    using u32 = uint32_t;
-    using u8 = uint8_t;
-
     struct Node {
-        u32 meta = 0;
-        u32 children = 0;
+        uint32_t leafs = 0;
+        std::array<uint32_t, 8> children {};
 
-        static constexpr u32 childMask = 0xff000000;
-        static constexpr u32 maskOffset = 24;
+        bool isLeaf() const {
+            for (const auto &child: children)
+                if (child != 0)
+                    return false;
 
-        u8 getChildMask() {
-            return meta >> 24;
+            return true;
         }
 
-        bool isLeaf() {
-            return getChildMask() == 0;
+        bool operator==(const Node &other) const {
+            return children == other.children && leafs == other.leafs;
         }
+
+        struct Hash {
+            size_t operator()(const Node &node) const {
+                uint64_t result = 0;
+                for (uint i = 0; i < 8; i++)
+                    result ^= (node.children[i] << (i * 4));
+
+                return result;
+            }
+        };
     };
 
-    static_assert(sizeof(Node) == 8);
+    static_assert(sizeof(Node) == 36);
 
-    std::vector<Node> data;
 
-    CompactOctree() {
-        data.emplace_back();
-    }
+    std::vector<Node> dag;
+    std::vector<uint32_t> colors;
 
-    explicit CompactOctree(const RawOctree &octree) {
-        std::queue<u32> nodeQueue;
-        nodeQueue.push(0);
 
-        data.emplace_back();
-        size_t cur = 0;
-
-        while (!nodeQueue.empty()) {
-            u32 v = nodeQueue.front();
-            nodeQueue.pop();
-
-            const RawOctree::Node &oldNode = octree.data[v];
-            data[cur].meta = (~Node::childMask) & oldNode.color;
-            data[cur].children = data.size();
-
-            for (u32 i = 0; i < oldNode.children.size(); i++) {
-                u32 childOffs = oldNode.children[i];
-
-                if (childOffs != 0) {
-                    nodeQueue.push(v + childOffs);
-
-                    data[cur].meta |= (1 << i << Node::maskOffset);
-                    data.emplace_back();
-                }
-            }
-
-            cur += 1;
-        }
-    }
+    CompactOctree() = default;
 
     void saveToDisk(const std::string &path) {
         std::ofstream output(path, std::ios::out | std::ios::binary);
 
-        output.write(reinterpret_cast<const char *>(data.data()), sizeof(Node) * data.size());
+        output.write(reinterpret_cast<const char *>(dag.data()), sizeof(Node) * dag.size());
     }
 
     explicit CompactOctree(const std::string &path) {
@@ -74,49 +54,82 @@ struct CompactOctree {
 
         Node node;
         while (input.read(reinterpret_cast<char *>(&node), sizeof(Node)))
-            data.push_back(node);
+            dag.push_back(node);
     }
+};
 
-    CompactOctree(const std::string &inPath, bool) {
-        std::ifstream input(inPath, std::ios::in | std::ios::binary);
 
-        std::queue<u32> nodeQueue;
-        nodeQueue.push(0);
+struct CompactOctreeBuilder {
+    using NodeMap = std::unordered_map<CompactOctree::Node, uint32_t, CompactOctree::Node::Hash>;
+    using Color = glm::u8vec3;
 
-        data.emplace_back();
-        size_t cur = 0;
+    NodeMap nodeMap;
+    const RawOctree &raw;
 
-        while (!nodeQueue.empty()) {
-            if (cur % 1000 == 0) {
-                printf("\r%zu", cur);
+    std::vector<uint32_t> rawColors;
+
+    uint32_t build(uint32_t v, CompactOctree &compact) {
+        RawOctree::Node rawNode = raw.data[v];
+
+        if (rawNode.isLeaf())
+            rawColors.push_back(rawNode.color);
+
+        CompactOctree::Node newNode{};
+
+        for (uint i = 0; i < 8; i++) {
+            auto childOffs = rawNode.children[i];
+            if (childOffs != 0) {
+                auto child = build(v + childOffs, compact);
+                newNode.children[i] = child;
+                newNode.leafs += compact.dag[child].leafs;
             }
-            fflush(stdout);
-
-            u32 v = nodeQueue.front();
-            nodeQueue.pop();
-
-            RawOctree::Node oldNode;
-            input.seekg(int64_t(v * sizeof(oldNode)), std::ios::beg);
-            input.read(reinterpret_cast<char *>(&oldNode), sizeof(oldNode));
-
-            data[cur].meta = (~Node::childMask) & oldNode.color;
-            data[cur].children = data.size();
-
-            for (u32 i = 0; i < oldNode.children.size(); i++) {
-                u32 childOffs = oldNode.children[i];
-
-                if (childOffs != 0) {
-                    nodeQueue.push(v + childOffs);
-
-                    data[cur].meta |= (1 << i << Node::maskOffset);
-                    data.emplace_back();
-                }
-            }
-
-            cur += 1;
         }
 
-        printf("Done!\n");
+        if (newNode.leafs == 0) // is a leaf
+            newNode.leafs = 1;
+
+        const auto &res = nodeMap.insert(NodeMap::value_type(newNode, uint32_t(compact.dag.size())));
+
+        if (res.second) {
+            compact.dag.push_back(newNode);
+        }
+
+        return res.first->second;
     }
 
+    CompactOctree output;
+
+    uint32_t reorder(uint32_t v, const CompactOctree &input, std::vector<uint32_t> &visited) {
+        if (visited[v] != 0)
+            return visited[v];
+
+        auto node = input.dag[v];
+
+        uint32_t id = output.dag.size();
+        output.dag.emplace_back();
+        output.dag.back().leafs = node.leafs;
+
+        visited[v] = id;
+
+        for (uint32_t i = 0; i < node.children.size(); i++) {
+            auto child = node.children[i];
+            if (child != 0) {
+                output.dag[id].children[i] = reorder(child, input, visited);
+            }
+        }
+
+        return id;
+    }
+
+    explicit CompactOctreeBuilder(RawOctree &_raw) : raw(_raw) {
+        CompactOctree tmp;
+        tmp.dag.emplace_back(); // fake node
+
+        uint32_t root = build(0, tmp);
+
+        std::vector<uint32_t> visited(tmp.dag.size());
+        reorder(root, tmp, visited);
+
+        output.colors = rawColors;
+    }
 };

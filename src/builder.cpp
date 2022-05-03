@@ -29,7 +29,7 @@ int main() {
 
     std::cout << "Build finished! Elapsed time: " << elapsed << std::endl;
 
-    CompactOctree tree(output.string(), false);
+    CompactOctree tree(output.string());
     tree.saveToDisk("presentation/test1.ctree");
 
     return 0;

@@ -35,8 +35,8 @@ struct OctreeTexModel : Drawable {
 
     void updateTree(const CompactOctree &octree) {
         glBufferData(GL_SHADER_STORAGE_BUFFER,
-                     GLsizeiptr(octree.data.size() * sizeof(CompactOctree::Node)),
-                     octree.data.data(), GL_DYNAMIC_DRAW);
+                     GLsizeiptr(octree.dag.size() * sizeof(CompactOctree::Node)),
+                     octree.dag.data(), GL_DYNAMIC_DRAW);
     }
 
     void draw(const glm::mat4 &MVPMat) const override {
