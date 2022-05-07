@@ -130,10 +130,7 @@ struct FullTreeBuilder {
     explicit FullTreeBuilder(const std::string &bundlePath, const std::string &_outputPath) :
         bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
         outputPath(_outputPath)
-        {
-            glEnable(GL_DEPTH_TEST);
-            glEnable(GL_CULL_FACE);
-        }
+        {}
 };
 
 

@@ -1,2 +1,2 @@
-resources/saharov/ presentation/
-resources/saharov/ presentation/0.tree
+resources/citywall_cut/ out/
+resources/citywall_cut/ UV out/0.tree

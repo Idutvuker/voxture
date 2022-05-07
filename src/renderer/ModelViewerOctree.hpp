@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ModelViewer.hpp"
 #include "VoxelGrid.hpp"
 #include "DebugDraw.hpp"
 #include "../builder/PartialTreeBuilder.hpp"
@@ -14,16 +15,10 @@
 #include "../test/Benchmark.hpp"
 #include "Model.hpp"
 
-struct ModelViewerOctree {
+struct ModelViewerOctree : ModelViewer {
     Bundle<> bundle;
 
-    GLFWContext context {900, 600};
-    Resources res;
-
     VoxelGrid voxelGrid;
-
-    RenderCamera renderCamera {float(context.windowWidth) / float(context.windowHeight)};
-    OrbitCameraController cameraController {renderCamera, context};
 
     OctreeTexModel model {bundle.mesh, res.modelSP};
 
@@ -90,7 +85,7 @@ struct ModelViewerOctree {
 
     bool useBundleCamera = false;
 
-    void run() {
+    void run() override {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
@@ -168,10 +163,7 @@ struct ModelViewerOctree {
 
     Benchmark benchmark {context};
 
-    void runBenchmark() {
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-
+    void runBenchmark() override {
         loadTexture();
 
         benchmark.start(model);

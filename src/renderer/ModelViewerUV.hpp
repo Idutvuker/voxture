@@ -1,19 +1,13 @@
 #pragma once
 
+#include "ModelViewer.hpp"
 #include "GLFWContext.hpp"
 #include "Model.hpp"
 
-struct ModelViewerUV {
+struct ModelViewerUV : ModelViewer {
     Bundle<TexTriangle> bundle;
 
-    GLFWContext context;
-    Resources res;
-
     UVTexModel model{bundle.mesh, res.texModelSP};
-
-    RenderCamera renderCamera{float(context.windowWidth) / float(context.windowHeight)};
-    OrbitCameraController cameraController{renderCamera, context};
-
     Image<glm::u8vec3> atlas;
 
     explicit ModelViewerUV(const std::string &bundlePath) :
@@ -34,7 +28,7 @@ struct ModelViewerUV {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, atlas.width, atlas.height, 0, GL_RGB, GL_UNSIGNED_BYTE, atlas.image.data());
     }
 
-    void run() {
+    void run() override {
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
 
@@ -82,10 +76,7 @@ struct ModelViewerUV {
 
     Benchmark benchmark {context};
 
-    void runBenchmark() {
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-
+    void runBenchmark() override {
         loadTexture();
 
         benchmark.start(model);

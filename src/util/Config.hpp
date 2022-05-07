@@ -7,11 +7,11 @@ struct Config {
     std::string builderBundlePath;
     std::string builderOutPath;
     std::string viewerBundlePath;
-    std::string viewerTreePath;
+    std::string viewerTexturePath;
 
     Config(const std::string &path) {
         std::ifstream input(path);
         input >> builderBundlePath >> builderOutPath;
-        input >> viewerBundlePath >> viewerTreePath;
+        input >> viewerBundlePath >> viewerTexturePath;
     }
 };
