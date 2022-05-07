@@ -57,10 +57,13 @@ public:
 
         orbitRadius = 10.f / (1.f + expf(float(GLFWContext::GLOBAL_SCROLL_Y) / 10.f));
 
+        mat4 fixMat = glm::rotate(mat4(1), -half_pi<float>(), vec3(1, 0, 0));
+
         camera.view =
                 translate(mat4(1), vec3(0, 0, -orbitRadius)) *
                 rotMatrix *
-                translate(mat4(1), orbitBase);
+                translate(mat4(1), orbitBase) *
+                fixMat;
 
 
         camera.projection = glm::perspective(glm::radians(camera.FOV), camera.aspectRatio, camera.NEAR, camera.FAR);

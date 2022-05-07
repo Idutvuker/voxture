@@ -136,19 +136,21 @@ struct VoxelGrid {
         GLint MVPLoc;
         GLint ColorLoc;
         const Octree &octree;
+        int maxLevel;
 
-        OctreeRenderer(const glm::mat4 &_viewProjMat, GLint _mvpLoc, GLint _colorLoc, const Octree &_octree) :
+        OctreeRenderer(const glm::mat4 &_viewProjMat, GLint _mvpLoc, GLint _colorLoc, const Octree &_octree, int _maxLevel) :
                 ViewProjMat(_viewProjMat),
                 MVPLoc(_mvpLoc),
                 ColorLoc(_colorLoc),
-                octree(_octree) {}
+                octree(_octree),
+                maxLevel(_maxLevel) {}
 
         void draw(uint32_t id, glm::uvec3 vox, float voxelSize, uint level = 0) {
             using namespace glm;
 
             const auto &node = octree.data[id];
 
-            if (node.isLeaf()) {
+            if (node.isLeaf() || level == maxLevel) {
                 mat4 base = scale(mat4(1), vec3(voxelSize));
                 vec3 pos(vox);
 
@@ -171,7 +173,7 @@ struct VoxelGrid {
         }
     };
 
-    void drawOctree(const Camera &camera, const Resources &res, const Octree &octree) const {
+    void drawOctree(const Camera &camera, const Resources &res, const Octree &octree, int maxLevel) const {
         if (octree.data.empty())
             return;
 
@@ -185,7 +187,7 @@ struct VoxelGrid {
 
         mat4 ViewProjMat = camera.projection * camera.view;
 
-        OctreeRenderer octreeRenderer(ViewProjMat, MVPLoc, ColorLoc, octree);
+        OctreeRenderer octreeRenderer(ViewProjMat, MVPLoc, ColorLoc, octree, maxLevel);
         octreeRenderer.draw(0, uvec3(0, 0, 0), 1.f);
     }
 };

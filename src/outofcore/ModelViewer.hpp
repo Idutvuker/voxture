@@ -17,7 +17,7 @@
 struct ModelViewer {
     Bundle<> bundle;
 
-    GLFWContext context {900, 600};
+    GLFWContext context {900, 700};
     Resources res;
 
     VoxelGrid voxelGrid;
@@ -75,8 +75,9 @@ struct ModelViewer {
 
         if (drawMode == DrawMode::MODEL) {
             model.draw(MVP);
-        }
-        else {
+        } else if (drawMode == DrawMode::VOXELS) {
+            voxelGrid.drawOctree(renderCamera, res, rawOctree, debugOctreeMaxLevel);
+        } else {
             viewPlane.draw();
         }
     }
@@ -86,6 +87,7 @@ struct ModelViewer {
     }
 
     bool useBundleCamera = false;
+    int debugOctreeMaxLevel = 0;
 
     void run() {
         glEnable(GL_DEPTH_TEST);
@@ -112,18 +114,17 @@ struct ModelViewer {
                 ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
-                {
-                    if (ImGui::Button("Draw Model"))
-                        drawMode = DrawMode::MODEL;
+                if (ImGui::Button("Draw Model"))
+                    drawMode = DrawMode::MODEL;
 
-                    if (ImGui::Button("Draw View Plane"))
-                        drawMode = DrawMode::VIEW_PLANE;
+                if (ImGui::Button("Draw View Plane"))
+                    drawMode = DrawMode::VIEW_PLANE;
 
-                    if (ImGui::Button("Draw Voxels"))
-                        drawMode = DrawMode::VOXELS;
+                if (ImGui::Button("Draw Voxels"))
+                    drawMode = DrawMode::VOXELS;
 
-                    ImGui::Checkbox("Bundle camera", &useBundleCamera);
-                }
+                ImGui::SliderInt("Octree max level", &debugOctreeMaxLevel, 0, 10);
+//                ImGui::Checkbox("Bundle camera", &useBundleCamera);
 
                 ImGui::Text("Voxel count: %zu", octree.data.size());
 
@@ -153,9 +154,12 @@ struct ModelViewer {
         model.updateTree(octree);
     }
 
+    Octree rawOctree;
+
     ModelViewer(const std::string &bundlePath, const std::string &octreePath) :
         bundle(bundlePath + "model.ply"),
-        octree(octreePath)
+        octree(octreePath),
+        rawOctree("outSah/0.tree")
     {}
 
 
