@@ -4,7 +4,7 @@
 #include <unordered_set>
 
 struct PartialTreeBuilder {
-    const uint maxLevel = 5;
+    const uint maxLevel = 6;
 
     std::vector<glm::vec3> points;
 
@@ -36,8 +36,8 @@ struct PartialTreeBuilder {
                     continue;
 
                 vec2 texCoord = (vec2(x, y) + 0.5f) / vec2(depthMap.width, depthMap.height) * 2.f - 1.f;
-                vec4 S = vec4(texCoord.x, texCoord.y, depthNDC, 1);
-                vec4 P = invViewProj * S;
+                vec4 fragCoord = vec4(texCoord.x, texCoord.y, depthNDC, 1);
+                vec4 P = invViewProj * fragCoord;
 
                 vec3 point(P / P.w);
                 if (!all(lessThan(point, vec3(1))))

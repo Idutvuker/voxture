@@ -5,26 +5,27 @@ const uint MAX_LEVEL = 20;
 in vec3 fPos;
 in vec4 gl_FragCoord;
 
+uniform sampler1D colors;
+
 out vec4 FragColor;
 
+
 struct Node {
-    uint meta;
-    uint children;
+    uint leafs;
+    uint children[8];
 };
 
-uint getNodeMask(uint meta) {
-    return meta >> 24;
-}
-
-layout(std430, binding = 0) buffer Voxels {
-    Node Octree[];
+layout(std430, binding = 0) buffer DAGBuffer {
+    Node DAG[];
 };
 
-vec3 sampleOctree(uvec3 targetVox, out uint outLevel) {
+
+vec3 sampleOctree(uvec3 targetVox) {
     uint level = 0;
-
-    uvec3 curVox = uvec3(0);
     uint curPtr = 0;
+    uvec3 curVox = uvec3(0);
+
+    uint rawID = 0;
 
     while (level < MAX_LEVEL) {
         uint levelDiff = MAX_LEVEL - level - 1;
@@ -32,33 +33,26 @@ vec3 sampleOctree(uvec3 targetVox, out uint outLevel) {
 
         uvec3 diff = vox - curVox * 2;
 
-        uint child = (diff.x << 2) + (diff.y << 1) + (diff.z);
+        uint childNum = (diff.x << 2) + (diff.y << 1) + (diff.z);
+        uint childAddr = DAG[curPtr].children[childNum];
 
-        uint mask = getNodeMask(Octree[curPtr].meta);
-
-        if ((mask & (1u << child)) == 0)
+        if (childAddr == 0)
             break;
 
-        int childId = bitCount(mask & ((1u << child) - 1u));
+        for (uint i = 0; i < childNum; i++) {
+            uint leftChildAddr = DAG[curPtr].children[i];
+            if (leftChildAddr != 0) {
+                rawID += DAG[leftChildAddr].leafs;
+            }
+        }
 
         curVox = vox;
-        curPtr = Octree[curPtr].children + childId;
+        curPtr = childAddr;
 
         level++;
     }
 
-    uint color = Octree[curPtr].meta;
-
-    const uint RED_MASK = 0xff0000;
-    const uint GREEN_MASK = 0x00ff00;
-    const uint BLUE_MASK = 0x0000ff;
-
-    uint r = (color & RED_MASK) >> 16;
-    uint g = (color & GREEN_MASK) >> 8;
-    uint b = color & BLUE_MASK;
-
-    outLevel = level;
-    return vec3(r, g, b) / 255.f;
+    return texelFetch(colors, int(rawID), 0);
 }
 
 const uvec3 VOX_OFFSET[8] = uvec3[](
@@ -76,28 +70,14 @@ const uvec3 VOX_OFFSET[8] = uvec3[](
 void main() {
     const uint gridSize = 1 << MAX_LEVEL;
 
-    uint level;
-
     const uvec3 baseVox = uvec3(fPos * gridSize);
-    vec3 color = sampleOctree(baseVox, level);
-
-//    vec3 colors[8];
-//    uint maxSampleLevel;
-//    for (int i = 0; i < 8; i++) {
-//        colors[i] = sampleOctree(baseVox + VOX_OFFSET[i], level);
-//        maxSampleLevel = max(maxSampleLevel, level);
-//    }
-//
-//    const vec3 voxFract = fract(fPos * (1 << maxSampleLevel)); // ??
-//
-//    vec3 xLerp[4];
-//    for (int i = 0; i < 4; i++)
-//        xLerp[i] = mix(colors[i], colors[i + 4], voxFract.x);
-//
-//    vec3 yLerp0 = mix(xLerp[0], xLerp[2], voxFract.y);
-//    vec3 yLerp1 = mix(xLerp[1], xLerp[3], voxFract.y);
-//
-//    vec3 color = mix(yLerp0, yLerp1, voxFract.z);
+    vec3 color = sampleOctree(baseVox);
 
     FragColor = vec4(color, 1.0);
+
+//    vec4 c;
+//    if (fPos.y < 0.5)
+//        c = texelFetch(colors, 0, 0);
+//    else
+//        c = texelFetch(colors, 50, 0);
 }

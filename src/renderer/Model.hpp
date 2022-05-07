@@ -3,6 +3,8 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "../data/CompactOctree.hpp"
 #include "mygl.hpp"
+#include "Texture.hpp"
+#include "../util/Logger.hpp"
 
 struct Drawable {
     virtual void draw(const glm::mat4 &MVPMat) const = 0;
@@ -11,7 +13,8 @@ struct Drawable {
 struct OctreeTexModel : Drawable {
     GLuint VAO;
     GLuint VBO;
-    GLuint SSBO;
+    GLuint DAG_SSBO;
+    Texture texture{GL_TEXTURE_1D};
 
     const std::vector<Triangle> &mesh;
     const ShaderProgram &shader;
@@ -28,15 +31,40 @@ struct OctreeTexModel : Drawable {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
 
-        glGenBuffers(1, &SSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SSBO);
+        glGenBuffers(1, &DAG_SSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, DAG_SSBO);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, DAG_SSBO);
+    }
+
+    static int findSide(size_t linSize) {
+        return glm::ceil(glm::sqrt(linSize));
+    }
+
+    static Image<uint32_t> createImage(const std::vector<uint32_t> &colors) {
+        auto side = findSide(colors.size());
+
+        Log.info({colors.size(), side, side * side});
+
+        Image<uint32_t> res(side, side);
+
+        for (size_t i = 0; i < colors.size(); i++) {
+            res.image[i] = colors[i];
+        }
+
+        return res;
     }
 
     void updateTree(const CompactOctree &octree) {
         glBufferData(GL_SHADER_STORAGE_BUFFER,
                      GLsizeiptr(octree.dag.size() * sizeof(CompactOctree::Node)),
                      octree.dag.data(), GL_DYNAMIC_DRAW);
+
+        texture.bind();
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB, GLsizei(octree.colors.size()), 0, GL_RGBA, GL_UNSIGNED_BYTE, octree.colors.data());
+
+//
+//        auto img = createImage(octree.colors);
+//        img.saveToDisk("colorsTex.bmp");
     }
 
     void draw(const glm::mat4 &MVPMat) const override {

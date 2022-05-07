@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "glm/glm.hpp"
 #include <cstring>
+#include <stb_image_write.h>
 
 template<typename T>
 struct Image {
@@ -50,5 +51,9 @@ struct Image {
 
     T getClamped(glm::ivec2 coord) const {
         return get(glm::clamp(coord, glm::ivec2(0, 0), glm::ivec2(width - 1, height - 1)));
+    }
+
+    void saveToDisk(const std::filesystem::path &filepath) {
+        stbi_write_bmp(filepath.string().c_str(), width, height, 4, image.data());
     }
 };

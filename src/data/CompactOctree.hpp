@@ -26,7 +26,7 @@ struct CompactOctree {
         struct Hash {
             size_t operator()(const Node &node) const {
                 uint64_t result = 0;
-                for (uint i = 0; i < 8; i++)
+                for (uint i = 0; i < node.children.size(); i++)
                     result ^= (node.children[i] << (i * 4));
 
                 return result;
@@ -67,6 +67,7 @@ struct CompactOctreeBuilder {
     const RawOctree &raw;
 
     std::vector<uint32_t> rawColors;
+    std::vector<size_t> hashes;
 
     uint32_t build(uint32_t v, CompactOctree &compact) {
         RawOctree::Node rawNode = raw.data[v];
@@ -88,6 +89,8 @@ struct CompactOctreeBuilder {
         if (newNode.leafs == 0) // is a leaf
             newNode.leafs = 1;
 
+//        CompactOctree::Node::Hash hash;
+//        hashes.push_back(hash(newNode));
         const auto &res = nodeMap.insert(NodeMap::value_type(newNode, uint32_t(compact.dag.size())));
 
         if (res.second) {
@@ -125,10 +128,20 @@ struct CompactOctreeBuilder {
         CompactOctree tmp;
         tmp.dag.emplace_back(); // fake node
 
+        std::cout << "Build start" << std::endl;
+
         uint32_t root = build(0, tmp);
+
+        std::cout << "Built" << std::endl;
 
         std::vector<uint32_t> visited(tmp.dag.size());
         reorder(root, tmp, visited);
+
+        std::cout << "Reorder end" << std::endl;
+
+//        for (int i = 0; i < 50; i++) {
+//            std::cout << hashes[i] << std::endl;
+//        }
 
         output.colors = rawColors;
     }

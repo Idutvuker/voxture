@@ -65,7 +65,7 @@ struct DiskTree {
             if (!output.is_open())
                 throw std::runtime_error("Can not open " + outputFilepath);
 
-            merge(0, 0, 0, 0);
+            merge(0, 0, 0);
         }
 
 
@@ -96,7 +96,7 @@ struct DiskTree {
         }
 
 
-        u32 merge(u32 id1, u32 id2, u32 pos, u32 level) {
+        u32 merge(u32 id1, u32 id2, u32 level) {
             const Node &node1 = tree1.getNode();
             const Node &node2 = tree2.getNode();
 
@@ -131,7 +131,7 @@ struct DiskTree {
                 else if (t2child == 0)
                     subTreeSize = writeSubtree(tree1, id1 + t1child, level + 1);
                 else
-                    subTreeSize = merge(id1 + t1child, id2 + t2child, pos + treeSize, level + 1);
+                    subTreeSize = merge(id1 + t1child, id2 + t2child, level + 1);
 
                 mergedNode.children[i] = treeSize;
                 treeSize += subTreeSize;
