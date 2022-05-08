@@ -5,7 +5,7 @@
 #include "Model.hpp"
 
 struct ModelViewerUV : ModelViewer {
-    Bundle<TexTriangle> bundle;
+    Bundle<TriangleUV> bundle;
 
     UVTexModel model{bundle.mesh, res.texModelSP};
     Image<glm::u8vec3> atlas;

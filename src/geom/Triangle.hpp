@@ -62,7 +62,7 @@ struct Vertex {
     glm::vec2 texCoord;
 };
 
-struct TexTriangle {
+struct TriangleUV {
     Vertex a;
     Vertex b;
     Vertex c;
@@ -85,9 +85,9 @@ struct TexTriangle {
 };
 
 static_assert(sizeof(Vertex) == 20);
-static_assert(sizeof(TexTriangle) == 60);
+static_assert(sizeof(TriangleUV) == 60);
 
-inline Status getTexTriangles(const std::string &filepath, std::vector<TexTriangle> &res) {
+inline Status getTexTriangles(const std::string &filepath, std::vector<TriangleUV> &res) {
     happly::PLYData plyData(filepath);
 
     std::vector<float> vPosX = plyData.getElement("vertex").getProperty<float>("x");
@@ -104,7 +104,7 @@ inline Status getTexTriangles(const std::string &filepath, std::vector<TexTriang
         const auto &triTexCoord = texCoords[i];
         assert(triTexCoord.size() == 6);
 
-        TexTriangle newTri;
+        TriangleUV newTri;
         for (int i = 0; i < 3; i++) {
             size_t idx = triInd[i];
             newTri[i] = glm::vec3(vPosX[idx], vPosY[idx], vPosZ[idx]);
