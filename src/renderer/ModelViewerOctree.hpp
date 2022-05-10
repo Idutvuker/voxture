@@ -154,9 +154,8 @@ struct ModelViewerOctree : ModelViewer {
 
     ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath) :
         bundle(bundlePath + "model.ply"),
-        rawOctree(octreePath)
+        octree(octreePath)
     {
-        octree = CompactOctreeBuilder(rawOctree).output;
         std::cout << "SIZE: " << octree.dag.size() << " Colors: " << octree.colors.size() << std::endl;
     }
 

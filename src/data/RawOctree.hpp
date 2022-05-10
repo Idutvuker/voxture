@@ -35,6 +35,9 @@ struct RawOctree {
     explicit RawOctree(const std::string &filepath) {
         std::ifstream inputFile(filepath, std::ios::in | std::ios::binary);
 
+        if (!inputFile.is_open())
+            throw std::runtime_error("Can not load tree");
+
         Node node;
         while (inputFile.read(reinterpret_cast<char *>(&node), sizeof(node)))
             data.push_back(node);

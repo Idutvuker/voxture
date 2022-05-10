@@ -1,2 +1,2 @@
 resources/saharov/ out/
-resources/saharov/ out/0.tree
+resources/saharov/ presentation/sah

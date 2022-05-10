@@ -4,7 +4,7 @@
 #include <unordered_set>
 
 struct PartialTreeBuilder {
-    const uint maxLevel = 7;
+    const uint maxLevel = RESOLUTION_LEVEL;
 
     std::vector<glm::vec3> points;
 

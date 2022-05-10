@@ -5,7 +5,7 @@
 
 using uint = uint32_t;
 
-constexpr uint32_t RESOLUTION_LEVEL = 16;
+constexpr uint32_t RESOLUTION_LEVEL = 20;
 
 constexpr float CAMERA_NEAR = 0.005f;
 constexpr float CAMERA_FAR = 10.f;

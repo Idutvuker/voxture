@@ -162,3 +162,17 @@ struct DiskTree {
         Merger(filepath1, filepath2, outputFilepath);
     }
 };
+
+template<typename T>
+struct TreeReader {
+    std::ifstream input;
+    RawOctree octree;
+
+    explicit TreeReader(const std::string &filepath) : input(filepath, std::ios::in | std::ios::binary) {}
+
+    T next() {
+        T node;
+        input.read(reinterpret_cast<char *>(&node), sizeof(T));
+        return node;
+    }
+};

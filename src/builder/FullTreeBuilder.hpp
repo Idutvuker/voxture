@@ -8,6 +8,7 @@
 #include "../data/RawOctree.hpp"
 #include "../renderer/Model.hpp"
 #include "DiskTree.hpp"
+#include "CompactOctreeBuilder.hpp"
 
 #include <functional>
 #include <filesystem>
@@ -56,8 +57,15 @@ struct FullTreeBuilder {
         return newPath;
     }
 
-    fs::path buildFull() {
-        return buildRec(0, bundle.cameras.size());
+    fs::path buildFull(bool buildCompact = false) {
+        auto res = buildRec(0, bundle.cameras.size());
+
+        if (buildCompact) {
+            std::cout << "Building compact octree" << std::endl;
+            CompactOctreeBuilder::build(outputPath + "compact");
+        }
+
+        return res;
     }
 
     fs::path buildTree(uint cameraId) {
