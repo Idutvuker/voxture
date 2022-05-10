@@ -19,6 +19,14 @@ layout(std430, binding = 0) buffer DAGBuffer {
     Node DAG[];
 };
 
+layout(std430, binding = 1) buffer ColorBuffer {
+    uint Colors[];
+};
+
+vec3 decodeRGB(uint value) {
+    uint MASK = 0xff;
+    return vec3(value >> 16 & MASK, value >> 8 & MASK, value & MASK) / 255.f;
+}
 
 vec3 sampleOctree(uvec3 targetVox) {
     uint level = 0;
@@ -52,7 +60,7 @@ vec3 sampleOctree(uvec3 targetVox) {
         level++;
     }
 
-    return texelFetch(colors, int(rawID), 0);
+    return decodeRGB(Colors[rawID]);
 }
 
 const uvec3 VOX_OFFSET[8] = uvec3[](
