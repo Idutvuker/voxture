@@ -108,7 +108,7 @@ struct ModelViewerOctree : ModelViewer {
 
             {
                 ImGui::Begin("Controls");
-                ImGui::SliderInt("orbit Rad", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
+                ImGui::SliderInt("orbit radius", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
                 {
                     if (ImGui::Button("Draw Model"))
@@ -123,10 +123,9 @@ struct ModelViewerOctree : ModelViewer {
                     ImGui::Checkbox("Bundle camera", &useBundleCamera);
                 }
 
-                ImGui::Text("Voxel count: %zu", octree.dag.size());
-
-                if (ImGui::Button("Load tree"))
-                    loadTexture();
+                ImGui::Text("Nodes: %zu", octree.dag.size());
+                ImGui::Text("Colors: %zu", octree.colors.size());
+                ImGui::Text("FPS: %.1f", 1.f / delta);
 
                 ImGui::End();
             }
@@ -146,7 +145,6 @@ struct ModelViewerOctree : ModelViewer {
     }
 
     CompactOctree octree;
-    RawOctree rawOctree;
 
     void loadTexture() {
         model.updateTree(octree);
