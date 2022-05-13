@@ -4,59 +4,88 @@
 #include "../renderer/Model.hpp"
 
 struct Benchmark {
-    static constexpr size_t FRAMES = 60 * 10;
+    static constexpr size_t FRAMES_PER_VIEW = 60;
     double stamp = 0;
 
     std::vector<double> history;
 
     const GLFWContext &context;
-    RenderCamera camera = RenderCamera {float(context.windowWidth) / float(context.windowHeight)};
-    explicit Benchmark(const GLFWContext &_context) : context(_context) {}
+    RenderCamera renderCam{float(context.windowWidth) / float(context.windowHeight)};
 
-    void measure() {
+    explicit Benchmark(const GLFWContext &_context) :
+            context(_context) {}
+
+    double measure() {
         double newStamp = glfwGetTime();
         double elapsed = newStamp - stamp;
 
         stamp = newStamp;
 
-        history.push_back(elapsed);
+        return elapsed;
     }
 
-    glm::mat4 getCameraPos(size_t frame) {
-        using namespace glm;
+    double testView(const Drawable &model, const glm::mat4 &MVP) {
+        std::vector<double> data;
 
-        float alpha = float(frame) / float(FRAMES - 1);
+        measure();
 
-        camera.view = glm::rotate(translate(mat4(1), vec3(0, 0, -2)), alpha * 2.f * pi<float>(), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        return camera.getViewProj();
-    }
-
-    void start(const Drawable &model) {
-        stamp = glfwGetTime();
-
-        for (size_t frame = 0; frame < FRAMES; frame++) {
+        for (size_t frame = 0; frame < FRAMES_PER_VIEW; frame++) {
             glfwPollEvents();
-            measure();
 
             glClearColor(0.3f, 0.2f, 0.2f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            model.draw(getCameraPos(frame));
+            model.draw(MVP);
 
             glfwSwapBuffers(context.window);
         }
+
+        auto elapsed = measure();
+
+        return elapsed / FRAMES_PER_VIEW;
     }
 
-    void analyze() {
-        double sum = 0;
+    static std::vector<glm::mat4> getCameras() {
+        std::ifstream input(BENCHMARK_CAMERAS_PATH);
 
-        for (const auto &x: history) {
-            sum += x;
+        std::vector<float> data;
+        float next;
+
+        while (input >> next)
+            data.push_back(next);
+
+        std::vector<glm::mat4> result;
+
+        for (int k = 0; k < data.size(); k += 16) {
+            glm::mat4 mat;
+
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    mat[i][j] = data[k + i * 4 + j];
+                }
+            }
+
+            result.push_back(mat);
         }
 
-        double avgTime = sum / double(history.size());
+        return result;
+    }
 
-        std::cout << "Avg fps: " << 1.0 / avgTime << std::endl;
+    void start(const Drawable &model) {
+        auto cameras = getCameras();
+
+        for (const auto &cam: cameras) {
+            history.push_back(testView(model, cam));
+        }
+
+        saveResultsToDisk();
+    }
+
+    void saveResultsToDisk() {
+        std::ofstream output("test/results.csv");
+
+        for (const auto &x: history) {
+            output << x << ',';
+        }
     }
 };

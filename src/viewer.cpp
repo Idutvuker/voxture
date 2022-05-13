@@ -3,7 +3,7 @@
 #include "renderer/ModelViewer.hpp"
 #include "util/Config.hpp"
 
-int main() {
+int main(int argc, char *argv[]) {
     Config config("resources/config.txt");
 
     ModelViewer *app;
@@ -13,7 +13,10 @@ int main() {
         app = new ModelViewerOctree(config.viewerBundlePath, config.viewerTexturePath);
 
     try {
-        app->run();
+        if (argc > 1 && std::string(argv[1]) == "benchmark")
+            app->runBenchmark();
+        else
+            app->run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }

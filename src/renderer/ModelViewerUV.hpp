@@ -80,6 +80,5 @@ struct ModelViewerUV : ModelViewer {
         loadTexture();
 
         benchmark.start(model);
-        benchmark.analyze();
     }
 };

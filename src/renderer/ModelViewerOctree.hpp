@@ -55,9 +55,6 @@ struct ModelViewerOctree : ModelViewer {
         MODEL, VOXELS, VIEW_PLANE
     } drawMode = DrawMode::MODEL;
 
-    int maxLevelWrapper = 0;
-    int DBHLevel = 0;
-
     DebugDraw debugDraw {};
 
     void draw() {
@@ -127,6 +124,9 @@ struct ModelViewerOctree : ModelViewer {
                 ImGui::Text("Colors: %zu", octree.colors.size());
                 ImGui::Text("FPS: %.1f", 1.f / delta);
 
+                if (ImGui::Button("Save camera"))
+                    saveCamera();
+
                 ImGui::End();
             }
 
@@ -141,6 +141,19 @@ struct ModelViewerOctree : ModelViewer {
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
             glfwSwapBuffers(context.window);
+        }
+    }
+
+    void saveCamera() {
+        std::ofstream output(BENCHMARK_CAMERAS_PATH, std::ios::app);
+
+        glm::mat4 mat = renderCamera.getViewProj();
+
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                output << mat[i][j] << ' ';
+            }
+            output << '\n';
         }
     }
 
@@ -164,6 +177,5 @@ struct ModelViewerOctree : ModelViewer {
         loadTexture();
 
         benchmark.start(model);
-        benchmark.analyze();
     }
 };

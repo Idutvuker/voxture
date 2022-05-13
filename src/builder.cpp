@@ -19,15 +19,17 @@ float tick() {
 }
 
 int main() {
-    Config config("resources/config.txt");
+//    Config config("resources/config.txt");
+//
+//    FullTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
+//
+//    tick();
+//    fs::path output = builder.buildFull();
+//    float elapsed = tick();
+//
+//    std::cout << "Build finished! Elapsed time: " << elapsed << std::endl;
 
-    FullTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
-
-    tick();
-    fs::path output = builder.buildFull();
-    float elapsed = tick();
-
-    std::cout << "Build finished! Elapsed time: " << elapsed << std::endl;
+    CompactOctreeBuilder::build("out/big.tree").saveToDisk("presentation/compact");
 
     return 0;
 }
