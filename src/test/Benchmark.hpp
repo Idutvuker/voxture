@@ -4,7 +4,7 @@
 #include "../renderer/Model.hpp"
 
 struct Benchmark {
-    static constexpr size_t FRAMES_PER_VIEW = 60;
+    static constexpr size_t FRAMES_PER_VIEW = 600;
     double stamp = 0;
 
     std::vector<double> history;
