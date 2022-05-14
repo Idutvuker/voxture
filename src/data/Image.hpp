@@ -7,6 +7,7 @@
 #include "glm/glm.hpp"
 #include <cstring>
 #include <stb_image_write.h>
+#include <filesystem>
 
 template<typename T>
 struct Image {
