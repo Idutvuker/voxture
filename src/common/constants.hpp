@@ -11,6 +11,8 @@ constexpr float CAMERA_NEAR = 0.005f;
 constexpr float CAMERA_FAR = 10.f;
 constexpr float CAMERA_DEFAULT_FOV = 48.f;
 
+constexpr bool ROTATE_SCENE_X_AXIS = false;
+
 const std::string BENCHMARK_CAMERAS_PATH = "benchmarkCameras.txt";
 
 constexpr std::array<glm::uvec3, 8> VOX_OFFSET = {
