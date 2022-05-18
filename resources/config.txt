@@ -1,2 +1,2 @@
 resources/saharov/ out/
-resources/saharov/ UV
+resources/saharov/ presentation/sah
