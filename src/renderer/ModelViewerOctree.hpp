@@ -57,6 +57,8 @@ struct ModelViewerOctree : ModelViewer {
 
     DebugDraw debugDraw {};
 
+    bool useBundleCamera = false;
+
     void draw() {
         glm::mat4 MVP;
         if (useBundleCamera) {
@@ -70,7 +72,7 @@ struct ModelViewerOctree : ModelViewer {
             model.draw(MVP);
         }
         else if (drawMode == DrawMode::VOXELS) {
-            voxelGrid.drawCompactOctree(renderCamera, res, octree);
+            voxelGrid.drawCompactOctree(renderCamera, res, octree, drawOctreeLevel);
         } else {
             viewPlane.draw();
         }
@@ -80,7 +82,7 @@ struct ModelViewerOctree : ModelViewer {
         cameraController.update(delta);
     }
 
-    bool useBundleCamera = false;
+    int drawOctreeLevel = 0;
 
     void run() override {
         glEnable(GL_DEPTH_TEST);
@@ -117,7 +119,7 @@ struct ModelViewerOctree : ModelViewer {
                     if (ImGui::Button("Draw Voxels"))
                         drawMode = DrawMode::VOXELS;
 
-                    ImGui::Checkbox("Bundle camera", &useBundleCamera);
+                    ImGui::SliderInt("Octree level", &drawOctreeLevel, 0, 10);
                 }
 
                 ImGui::Text("Nodes: %zu", octree.dag.size());

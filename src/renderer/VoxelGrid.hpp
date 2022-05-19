@@ -166,14 +166,17 @@ struct VoxelGrid {
         GLint MVPLoc;
         GLint ColorLoc;
         const CompactOctree &octree;
+        int maxLevel;
 
-        CompactOctreeRenderer(const glm::mat4 &_viewProjMat, GLint _mvpLoc, GLint _colorLoc, const CompactOctree &_octree) :
+        CompactOctreeRenderer(const glm::mat4 &_viewProjMat, GLint _mvpLoc, GLint _colorLoc,
+                              const CompactOctree &_octree, int _maxLevel) :
                 ViewProjMat(_viewProjMat),
                 MVPLoc(_mvpLoc),
                 ColorLoc(_colorLoc),
-                octree(_octree) {}
+                octree(_octree),
+                maxLevel(_maxLevel) {}
 
-        void draw(uint32_t id, glm::uvec3 vox, float voxelSize, uint32_t rawId) {
+        void draw(uint32_t id, glm::uvec3 vox, float voxelSize, uint32_t rawId, int level) {
             if (rawId >= octree.colors.size()) {
                 std::cerr << rawId << std::endl;
             }
@@ -182,7 +185,7 @@ struct VoxelGrid {
 
             const auto &node = octree.dag[id];
 
-            if (node.isLeaf()) {
+            if (level == maxLevel || node.isLeaf()) {
                 mat4 base = scale(mat4(1), vec3(voxelSize));
                 vec3 pos(vox);
 
@@ -191,8 +194,8 @@ struct VoxelGrid {
 
                 glUniformMatrix4fv(MVPLoc, 1, GL_FALSE, value_ptr(MVPMat));
 
-//                vec3 color3f = parseColor(octree.colors[rawId]);
-                vec3 color3f = fract(pos * voxelSize * 13643.3545f);
+                vec3 color3f = parseColor(octree.colors[rawId]);
+//                vec3 color3f = fract(pos * voxelSize * 13643.3545f);
                 glUniform3fv(ColorLoc, 1, value_ptr(color3f));
 
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
@@ -202,7 +205,7 @@ struct VoxelGrid {
                 for (uint i = 0; i < node.children.size(); i++) {
                     auto child = node.children[i];
                     if (child != 0) {
-                        draw(child, vox * uint(2) + VOX_OFFSET[i], voxelSize / 2.f, rawChildId);
+                        draw(child, vox * uint(2) + VOX_OFFSET[i], voxelSize / 2.f, rawChildId, level + 1);
                         rawChildId += octree.dag[child].leafs;
                     }
                 }
@@ -210,7 +213,8 @@ struct VoxelGrid {
         }
     };
 
-    void drawCompactOctree(const Camera &camera, const Resources &res, const CompactOctree &octree) const {
+    void
+    drawCompactOctree(const Camera &camera, const Resources &res, const CompactOctree &octree, int maxLevel) const {
         if (octree.dag.empty())
             return;
 
@@ -224,7 +228,7 @@ struct VoxelGrid {
 
         mat4 ViewProjMat = camera.projection * camera.view;
 
-        CompactOctreeRenderer octreeRenderer(ViewProjMat, MVPLoc, ColorLoc, octree);
-        octreeRenderer.draw(0, uvec3(0, 0, 0), 1.f, 0);
+        CompactOctreeRenderer octreeRenderer(ViewProjMat, MVPLoc, ColorLoc, octree, maxLevel);
+        octreeRenderer.draw(0, uvec3(0, 0, 0), 1.f, 0, 0);
     }
 };
