@@ -22,7 +22,7 @@ struct GLFWContext {
         GLOBAL_SCROLL_Y += int(dy);
     }
 
-    GLFWContext(int _windowWidth = 1200, int _windowHeight = 700, bool windowVisible = true) :
+    GLFWContext(int _windowWidth = 800, int _windowHeight = 600, bool windowVisible = true) :
             windowWidth(_windowWidth), windowHeight(_windowHeight) {
         if (!glfwInit())
             throw std::runtime_error("GLFW failed to initialize");

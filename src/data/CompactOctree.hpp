@@ -8,6 +8,8 @@
 
 #include "../builder/DiskTree.hpp"
 
+#include "stb_dxt.h"
+
 struct CompactOctree {
     struct Node {
         uint32_t leafs = 0;
@@ -24,10 +26,8 @@ struct CompactOctree {
 
     static_assert(sizeof(Node) == 36);
 
-    using Color = uint32_t;
-
     std::vector<Node> dag;
-    std::vector<Color> colors;
+    std::vector<uint8_t> colors;
 
 
     CompactOctree() = default;
@@ -39,7 +39,19 @@ struct CompactOctree {
         }
         {
             std::ofstream output(path + ".colors", std::ios::out | std::ios::binary);
-            output.write(reinterpret_cast<const char *>(colors.data()), sizeof(Color) * colors.size());
+            output.write(reinterpret_cast<const char *>(colors.data()), sizeof(uint8_t) * colors.size());
+        }
+    }
+
+    void compressColors() {
+        using u8 = uint8_t;
+
+        std::vector<u8> dst(10, 0);
+
+        stb_compress_dxt_block(dst.data(), reinterpret_cast<const unsigned char *>(colors.data()), 0, STB_DXT_NORMAL);
+
+        for (uint i = 0; i < 10; i++) {
+            std::cout << i << ' ' << int(dst[i]) << std::endl;
         }
     }
 
@@ -54,8 +66,8 @@ struct CompactOctree {
         {
             std::ifstream input(path + ".colors", std::ios::in | std::ios::binary);
 
-            Color color;
-            while (input.read(reinterpret_cast<char *>(&color), sizeof(Color)))
+            uint8_t color;
+            while (input.read(reinterpret_cast<char *>(&color), sizeof(uint8_t)))
                 colors.push_back(color);
         }
     }

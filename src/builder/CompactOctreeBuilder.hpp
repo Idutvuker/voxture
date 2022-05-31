@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 struct CompactOctreeBuilder {
     struct Node {
         size_t hash = 0;
@@ -45,13 +47,29 @@ struct CompactOctreeBuilder {
     using NodeMap = std::unordered_map<Node, uint32_t, Node::Hash>;
     using LevelVec = std::vector<NodeMap>;
 
-    using Color = glm::u8vec3;
+    std::array<uint32_t, 16> buffer;
+    uint bufferPtr = 0;
 
-    static std::pair<uint32_t, uint> buildRec(TreeReader<RawOctree::Node> &reader, std::vector<uint32_t> &rawColors, TempTree &tree, LevelVec &levelVec) {
+    std::vector<uint8_t> colors;
+
+    void writeColor(uint32_t rgb) {
+        buffer[bufferPtr] = rgb << 8; // rgba, alpha is const zero
+        bufferPtr += 1;
+
+        if (bufferPtr == buffer.size()) {
+            size_t oldSize = colors.size();
+            colors.resize(oldSize + 8);
+            stb_compress_dxt_block(colors.data() + oldSize, reinterpret_cast<unsigned char *>(buffer.data()), 0, STB_DXT_NORMAL);
+
+            bufferPtr = 0;
+        }
+    }
+
+    std::pair<uint32_t, uint> buildRec(TreeReader<RawOctree::Node> &reader, TempTree &tree, LevelVec &levelVec) {
         RawOctree::Node rawNode = reader.next();
 
         if (rawNode.isLeaf())
-            rawColors.push_back(rawNode.color);
+            writeColor(rawNode.color);
 
         Node newNode{};
         uint height = 0;
@@ -59,7 +77,7 @@ struct CompactOctreeBuilder {
         for (uint i = 0; i < 8; i++) {
             auto childOffs = rawNode.children[i];
             if (childOffs != 0) {
-                auto child = buildRec(reader, rawColors, tree, levelVec);
+                auto child = buildRec(reader, tree, levelVec);
                 newNode.children[i] = child.first;
                 newNode.leafs += tree[child.first].leafs;
 
@@ -89,7 +107,7 @@ struct CompactOctreeBuilder {
         return {res.first->second, height};
     }
 
-    static uint32_t reorder(uint32_t v, const TempTree &input, CompactOctree &output, std::vector<uint32_t> &visited) {
+    uint32_t reorder(uint32_t v, const TempTree &input, CompactOctree &output, std::vector<uint32_t> &visited) {
         if (visited[v] != 0)
             return visited[v];
 
@@ -112,24 +130,25 @@ struct CompactOctreeBuilder {
     }
 
     static CompactOctree build(const std::filesystem::path &rawOctreePath) {
+        CompactOctreeBuilder builder;
         TreeReader<RawOctree::Node> reader(rawOctreePath.string());
 
-        std::vector<uint32_t> rawColors;
+        std::vector<uint8_t> colors;
 
         TempTree tempTree;
         tempTree.emplace_back(); // fake node
 
         {
             LevelVec levelVec;
-            buildRec(reader, rawColors, tempTree, levelVec);
+            builder.buildRec(reader, tempTree, levelVec);
         }
 
         CompactOctree compactOctree;
 
         std::vector<uint32_t> visited(tempTree.size());
-        reorder(tempTree.size() - 1, tempTree, compactOctree, visited);
+        builder.reorder(tempTree.size() - 1, tempTree, compactOctree, visited);
 
-        compactOctree.colors = rawColors;
+        compactOctree.colors = colors;
 
         return compactOctree;
     }

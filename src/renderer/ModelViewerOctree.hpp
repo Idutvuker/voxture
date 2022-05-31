@@ -14,13 +14,14 @@
 #include "GLFWContext.hpp"
 #include "../test/Benchmark.hpp"
 #include "Model.hpp"
+#include "../data/DDSImage.hpp"
 
 struct ModelViewerOctree : ModelViewer {
-    Bundle<> bundle;
+//    Bundle<> bundle;
 
     VoxelGrid voxelGrid;
 
-    OctreeTexModel model {bundle.mesh, res.modelSP};
+//    OctreeTexModel model {bundle.mesh, res.modelSP};
 
     struct ViewPlane {
         GLuint VAO;
@@ -62,14 +63,15 @@ struct ModelViewerOctree : ModelViewer {
     void draw() {
         glm::mat4 MVP;
         if (useBundleCamera) {
-            MVP = bundle.cameras[0].camera.getViewProj();
+//            MVP = bundle.cameras[0].camera.getViewProj();
         } else {
             MVP = renderCamera.getViewProj();
         }
 
         if (drawMode == DrawMode::MODEL) {
+            viewPlane.draw();
 //            voxelGrid.drawOctree(renderCamera, res, rawOctree);
-            model.draw(MVP);
+//            model.draw(MVP);
         }
         else if (drawMode == DrawMode::VOXELS) {
             voxelGrid.drawCompactOctree(renderCamera, res, octree, drawOctreeLevel);
@@ -83,6 +85,8 @@ struct ModelViewerOctree : ModelViewer {
     }
 
     int drawOctreeLevel = 0;
+
+    Image<glm::u8vec3> img{"resources/textures/test_texture.bmp"};
 
     void run() override {
         glEnable(GL_DEPTH_TEST);
@@ -110,11 +114,17 @@ struct ModelViewerOctree : ModelViewer {
                 ImGui::SliderInt("orbit radius", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
                 {
-                    if (ImGui::Button("Draw Model"))
+                    if (ImGui::Button("Draw Model")) {
                         drawMode = DrawMode::MODEL;
 
-                    if (ImGui::Button("Draw View Plane"))
+//                        glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.image.data());
+                    }
+
+                    if (ImGui::Button("Draw View Plane")) {
                         drawMode = DrawMode::VIEW_PLANE;
+
+//                        glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.image.data());
+                    }
 
                     if (ImGui::Button("Draw Voxels"))
                         drawMode = DrawMode::VOXELS;
@@ -161,13 +171,24 @@ struct ModelViewerOctree : ModelViewer {
 
     CompactOctree octree;
 
+    Texture texture {GL_TEXTURE_2D};
+
     void loadTexture() {
-        model.updateTree(octree);
+        texture.bind();
+
+        auto image = DDSImage("resources/textures/test_texture.dds");
+
+        GLenum format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, image.header.dwWidth, image.header.dwHeight, 0,
+                               image.data.size(), image.data.data());
+
+//        model.updateTree(octree);
     }
 
-    ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath) :
-        bundle(bundlePath + "model.ply"),
-        octree(octreePath)
+    ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath)
+//        bundle(bundlePath + "model.ply"),
+//        octree(octreePath)
     {
         std::cout << "SIZE: " << octree.dag.size() << " Colors: " << octree.colors.size() << std::endl;
     }
@@ -178,6 +199,6 @@ struct ModelViewerOctree : ModelViewer {
     void runBenchmark() override {
         loadTexture();
 
-        benchmark.start(model);
+//        benchmark.start(model);
     }
 };
