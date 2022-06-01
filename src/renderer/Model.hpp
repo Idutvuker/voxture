@@ -31,13 +31,8 @@ struct OctreeTexModel : Drawable {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         glEnableVertexAttribArray(0);
 
-
         glGenBuffers(1, &DAG_SSBO);
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, DAG_SSBO);
-//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, DAG_SSBO);
-
         glGenBuffers(1, &COLORS_SSBO);
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, COLORS_SSBO);
     }
 
     static int findSide(size_t linSize) {
@@ -58,6 +53,25 @@ struct OctreeTexModel : Drawable {
         return res;
     }
 
+    Texture texture {GL_TEXTURE_2D};
+
+    void loadCompressedColors(const CompactOctree &octree) {
+        texture.bind();
+
+        auto blocksX = octree.colors.header.blocksX;
+        auto blocksY = octree.colors.header.blocksY;
+
+        Log.info({blocksX * blocksY, blocksX, blocksY, octree.dag.size(), octree.colors.size()});
+
+        auto width = GLsizei(blocksX * 4);
+        auto height = GLsizei(blocksY * 4);
+
+        GLenum format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GLsizei(octree.colors.size()), octree.colors.data());
+        glCheckError();
+    }
+
     void updateTree(const CompactOctree &octree) {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, DAG_SSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER,
@@ -65,10 +79,14 @@ struct OctreeTexModel : Drawable {
                      octree.dag.data(), GL_DYNAMIC_DRAW);
 
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, COLORS_SSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER,
-                     GLsizeiptr(octree.colors.size() * sizeof(uint32_t)),
-                     octree.colors.data(), GL_DYNAMIC_DRAW);
+        if (octree.colors.header.compressed) {
+            loadCompressedColors(octree);
+        } else {
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, COLORS_SSBO);
+            glBufferData(GL_SHADER_STORAGE_BUFFER,
+                         GLsizeiptr(octree.colors.size() * sizeof(uint8_t)),
+                         octree.colors.data(), GL_DYNAMIC_DRAW);
+        }
     }
 
     void draw(const glm::mat4 &MVPMat) const override {
@@ -88,7 +106,6 @@ struct OctreeTexModel : Drawable {
 struct UVTexModel : Drawable {
     GLuint VAO;
     GLuint VBO;
-    GLuint SSBO;
 
     const std::vector<TriangleUV> &mesh;
     const ShaderProgram &shader;

@@ -9,6 +9,7 @@
 #include "../builder/DiskTree.hpp"
 
 #include "stb_dxt.h"
+#include "../util/DiskIO.hpp"
 
 struct CompactOctree {
     struct Node {
@@ -27,48 +28,39 @@ struct CompactOctree {
     static_assert(sizeof(Node) == 36);
 
     std::vector<Node> dag;
-    std::vector<uint8_t> colors;
 
+    struct Colors : std::vector<uint8_t> {
+        struct Header {
+            bool compressed = false;
+
+            uint32_t blocksX = 0;
+            uint32_t blocksY = 0;
+        } header;
+    } colors;
 
     CompactOctree() = default;
 
     void saveToDisk(const std::string &path) {
         {
-            std::ofstream output(path + ".dag", std::ios::out | std::ios::binary);
-            output.write(reinterpret_cast<const char *>(dag.data()), sizeof(Node) * dag.size());
+            auto output = DiskIO::openBinaryOutput(path + ".dag");
+            DiskIO::writeVec(output, dag);
         }
         {
-            std::ofstream output(path + ".colors", std::ios::out | std::ios::binary);
-            output.write(reinterpret_cast<const char *>(colors.data()), sizeof(uint8_t) * colors.size());
-        }
-    }
-
-    void compressColors() {
-        using u8 = uint8_t;
-
-        std::vector<u8> dst(10, 0);
-
-        stb_compress_dxt_block(dst.data(), reinterpret_cast<const unsigned char *>(colors.data()), 0, STB_DXT_NORMAL);
-
-        for (uint i = 0; i < 10; i++) {
-            std::cout << i << ' ' << int(dst[i]) << std::endl;
+            auto output = DiskIO::openBinaryOutput(path + ".colors");
+            DiskIO::write(output, colors.header);
+            DiskIO::writeVec(output, colors);
         }
     }
 
     explicit CompactOctree(const std::string &path) {
         {
-            std::ifstream input(path + ".dag", std::ios::in | std::ios::binary);
-
-            Node node;
-            while (input.read(reinterpret_cast<char *>(&node), sizeof(Node)))
-                dag.push_back(node);
+            auto input = DiskIO::openBinaryInput(path + ".dag");
+            DiskIO::readToVec(input, dag);
         }
         {
-            std::ifstream input(path + ".colors", std::ios::in | std::ios::binary);
-
-            uint8_t color;
-            while (input.read(reinterpret_cast<char *>(&color), sizeof(uint8_t)))
-                colors.push_back(color);
+            auto input = DiskIO::openBinaryInput(path + ".colors");
+            DiskIO::read(input, colors.header);
+            DiskIO::readToVec(input, colors);
         }
     }
 };

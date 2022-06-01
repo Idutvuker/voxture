@@ -1,2 +1,2 @@
-resources/saharov/ out/
-resources/saharov/ presentation/sah
+resources/saharov/ data/test/
+resources/saharov/ data/test/sah

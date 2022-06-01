@@ -5,7 +5,7 @@ const uint MAX_LEVEL = 20;
 in vec3 fPos;
 in vec4 gl_FragCoord;
 
-uniform sampler1D colors;
+uniform sampler2D Colors;
 
 out vec4 FragColor;
 
@@ -18,15 +18,6 @@ struct Node {
 layout(std430, binding = 0) buffer DAGBuffer {
     Node DAG[];
 };
-
-layout(std430, binding = 1) buffer ColorBuffer {
-    uint Colors[];
-};
-
-vec3 decodeRGB(uint value) {
-    uint MASK = 0xff;
-    return vec3(value >> 16 & MASK, value >> 8 & MASK, value & MASK) / 255.f;
-}
 
 vec3 sampleOctree(uvec3 targetVox) {
     uint level = 0;
@@ -60,7 +51,21 @@ vec3 sampleOctree(uvec3 targetVox) {
         level++;
     }
 
-    return decodeRGB(Colors[rawID]);
+    const uint blockPixelSize = 16;
+
+    uint width = uint(textureSize(Colors, 0).x);
+    uint blockWidth = width / 4;
+
+    uint blockID = rawID / blockPixelSize;
+    uint blockX = blockID % blockWidth;
+    uint blockY = blockID / blockWidth;
+
+    uint localID = rawID % blockPixelSize;
+    ivec2 localCoord = ivec2(localID % 4, localID / 4);
+
+    ivec2 coord = ivec2(blockX * 4, blockY * 4) + localCoord;
+
+    return texelFetch(Colors, coord, 0).rgb;
 }
 
 const uvec3 VOX_OFFSET[8] = uvec3[](

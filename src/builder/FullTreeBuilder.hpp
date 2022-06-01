@@ -62,7 +62,7 @@ struct FullTreeBuilder {
 
         if (buildCompact) {
             std::cout << "Building compact octree" << std::endl;
-            CompactOctreeBuilder::build(fullTree).saveToDisk(outputPath + "compact");
+            CompactOctreeBuilder::build(fullTree, true).saveToDisk(outputPath + "compact");
         }
 
         return fullTree;

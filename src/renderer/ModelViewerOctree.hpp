@@ -17,11 +17,12 @@
 #include "../data/DDSImage.hpp"
 
 struct ModelViewerOctree : ModelViewer {
-//    Bundle<> bundle;
+    Bundle<> bundle;
 
     VoxelGrid voxelGrid;
 
-//    OctreeTexModel model {bundle.mesh, res.modelSP};
+    CompactOctree octree;
+    OctreeTexModel model {bundle.mesh, octree.colors.header.compressed ? res.modelCompColorsSP : res.modelRawColorsSP};
 
     struct ViewPlane {
         GLuint VAO;
@@ -56,22 +57,16 @@ struct ModelViewerOctree : ModelViewer {
         MODEL, VOXELS, VIEW_PLANE
     } drawMode = DrawMode::MODEL;
 
-    DebugDraw debugDraw {};
-
-    bool useBundleCamera = false;
-
     void draw() {
         glm::mat4 MVP;
-        if (useBundleCamera) {
-//            MVP = bundle.cameras[0].camera.getViewProj();
+        if (useSavedCamera && !savedCameras.empty()) {
+            MVP = savedCameras[savedCameraID];
         } else {
             MVP = renderCamera.getViewProj();
         }
 
         if (drawMode == DrawMode::MODEL) {
-            viewPlane.draw();
-//            voxelGrid.drawOctree(renderCamera, res, rawOctree);
-//            model.draw(MVP);
+            model.draw(MVP);
         }
         else if (drawMode == DrawMode::VOXELS) {
             voxelGrid.drawCompactOctree(renderCamera, res, octree, drawOctreeLevel);
@@ -83,6 +78,9 @@ struct ModelViewerOctree : ModelViewer {
     void update(float delta) {
         cameraController.update(delta);
     }
+
+    bool useSavedCamera = false;
+    int savedCameraID = 0;
 
     int drawOctreeLevel = 0;
 
@@ -113,24 +111,16 @@ struct ModelViewerOctree : ModelViewer {
                 ImGui::Begin("Controls");
                 ImGui::SliderInt("orbit radius", &GLFWContext::GLOBAL_SCROLL_Y, -5, 30);
 
-                {
-                    if (ImGui::Button("Draw Model")) {
-                        drawMode = DrawMode::MODEL;
+                if (ImGui::Button("Draw Model"))
+                    drawMode = DrawMode::MODEL;
 
-//                        glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.image.data());
-                    }
+                if (ImGui::Button("Draw View Plane"))
+                    drawMode = DrawMode::VIEW_PLANE;
 
-                    if (ImGui::Button("Draw View Plane")) {
-                        drawMode = DrawMode::VIEW_PLANE;
+                if (ImGui::Button("Draw Voxels"))
+                    drawMode = DrawMode::VOXELS;
 
-//                        glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.image.data());
-                    }
-
-                    if (ImGui::Button("Draw Voxels"))
-                        drawMode = DrawMode::VOXELS;
-
-                    ImGui::SliderInt("Octree level", &drawOctreeLevel, 0, 10);
-                }
+                ImGui::SliderInt("Octree level", &drawOctreeLevel, 0, 10);
 
                 ImGui::Text("Nodes: %zu", octree.dag.size());
                 ImGui::Text("Colors: %zu", octree.colors.size());
@@ -138,6 +128,9 @@ struct ModelViewerOctree : ModelViewer {
 
                 if (ImGui::Button("Save camera"))
                     saveCamera();
+
+                ImGui::Checkbox("Use saved camera", &useSavedCamera);
+                ImGui::SliderInt("Saved camera id", &savedCameraID, 0, int(savedCameras.size()));
 
                 ImGui::End();
             }
@@ -169,36 +162,23 @@ struct ModelViewerOctree : ModelViewer {
         }
     }
 
-    CompactOctree octree;
-
-    Texture texture {GL_TEXTURE_2D};
-
     void loadTexture() {
-        texture.bind();
-
-        auto image = DDSImage("resources/textures/test_texture.dds");
-
-        GLenum format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, format, image.header.dwWidth, image.header.dwHeight, 0,
-                               image.data.size(), image.data.data());
-
-//        model.updateTree(octree);
+        model.updateTree(octree);
     }
-
-    ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath)
-//        bundle(bundlePath + "model.ply"),
-//        octree(octreePath)
-    {
-        std::cout << "SIZE: " << octree.dag.size() << " Colors: " << octree.colors.size() << std::endl;
-    }
-
 
     Benchmark benchmark {context};
 
     void runBenchmark() override {
         loadTexture();
 
-//        benchmark.start(model);
+        benchmark.start(model);
     }
+
+
+    std::vector<glm::mat4> savedCameras = Benchmark::getCameras();
+
+    ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath) :
+            bundle(bundlePath + "model.ply"),
+            octree(octreePath)
+    {}
 };

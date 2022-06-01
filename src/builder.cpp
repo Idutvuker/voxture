@@ -29,11 +29,10 @@ int main() {
 //
 //    std::cout << "Build finished! Elapsed time: " << elapsed << std::endl;
 
-//    CompactOctreeBuilder::build("out/big.tree").saveToDisk("presentation/compact");
+    CompactOctreeBuilder::build("data/test/0_32.tree", false).saveToDisk("data/test/sah");
 
-    CompactOctree t("presentation/compact");
+//    CompactOctree t("presentation/compact");
 
-    t.compressColors();
 
     return 0;
 }

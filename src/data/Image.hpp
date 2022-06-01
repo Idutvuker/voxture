@@ -55,6 +55,6 @@ struct Image {
     }
 
     void saveToDisk(const std::filesystem::path &filepath) {
-        stbi_write_bmp(filepath.string().c_str(), width, height, 4, image.data());
+        stbi_write_bmp(filepath.string().c_str(), width, height, numChannels, image.data());
     }
 };

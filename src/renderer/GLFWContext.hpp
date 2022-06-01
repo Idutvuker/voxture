@@ -22,7 +22,7 @@ struct GLFWContext {
         GLOBAL_SCROLL_Y += int(dy);
     }
 
-    GLFWContext(int _windowWidth = 800, int _windowHeight = 600, bool windowVisible = true) :
+    GLFWContext(int _windowWidth = 800, int _windowHeight = 800, bool windowVisible = true) :
             windowWidth(_windowWidth), windowHeight(_windowHeight) {
         if (!glfwInit())
             throw std::runtime_error("GLFW failed to initialize");
@@ -45,7 +45,7 @@ struct GLFWContext {
         if (!gladLoadGLLoader(GLADloadproc(glfwGetProcAddress)))
             throw std::runtime_error("GLAD failed to initialize");
 
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();

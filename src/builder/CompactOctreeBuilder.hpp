@@ -47,21 +47,40 @@ struct CompactOctreeBuilder {
     using NodeMap = std::unordered_map<Node, uint32_t, Node::Hash>;
     using LevelVec = std::vector<NodeMap>;
 
-    std::array<uint32_t, 16> buffer;
-    uint bufferPtr = 0;
 
-    std::vector<uint8_t> colors;
+    bool compressColors;
 
-    void writeColor(uint32_t rgb) {
-        buffer[bufferPtr] = rgb << 8; // rgba, alpha is const zero
-        bufferPtr += 1;
+    struct ColorBuffer : std::array<uint32_t, 16> {
+        uint ptr = 0;
 
-        if (bufferPtr == buffer.size()) {
-            size_t oldSize = colors.size();
-            colors.resize(oldSize + 8);
-            stb_compress_dxt_block(colors.data() + oldSize, reinterpret_cast<unsigned char *>(buffer.data()), 0, STB_DXT_NORMAL);
+        ColorBuffer() : std::array<uint32_t, 16>() {};
+    } buffer;
 
-            bufferPtr = 0;
+    CompactOctree::Colors colors {.header = {.compressed = compressColors}};
+
+
+    void writeColor(uint32_t argb) {
+        if (!compressColors) {
+            colors.push_back(0); // alpha channel
+            colors.push_back(argb >> 16 & 0xff);
+            colors.push_back(argb >> 8 & 0xff);
+            colors.push_back(argb & 0xff);
+        }
+        else {
+            uint32_t rgba_little_endian =
+                    (argb >> 16 & 0xff) | (argb >> 8 & 0xff) << 8 | (argb & 0xff) << 16 | (argb >> 24 & 0xff) << 24;
+
+            buffer[buffer.ptr] = rgba_little_endian;
+            buffer.ptr++;
+
+            if (buffer.ptr == buffer.size()) {
+                size_t oldSize = colors.size();
+                colors.resize(oldSize + 8);
+                stb_compress_dxt_block(colors.data() + oldSize, reinterpret_cast<unsigned char *>(buffer.data()), 0,
+                                       STB_DXT_NORMAL);
+
+                buffer.ptr = 0;
+            }
         }
     }
 
@@ -69,7 +88,7 @@ struct CompactOctreeBuilder {
         RawOctree::Node rawNode = reader.next();
 
         if (rawNode.isLeaf())
-            writeColor(rawNode.color);
+            writeColor(rawNode.color & 0x00ffffff); // pass argb with 0 alpha
 
         Node newNode{};
         uint height = 0;
@@ -129,11 +148,32 @@ struct CompactOctreeBuilder {
         return id;
     }
 
-    static CompactOctree build(const std::filesystem::path &rawOctreePath) {
-        CompactOctreeBuilder builder;
-        TreeReader<RawOctree::Node> reader(rawOctreePath.string());
+    void completeColors() {
+        while (buffer.ptr != 0)
+            writeColor(buffer[buffer.ptr - 1]);
 
-        std::vector<uint8_t> colors;
+        auto &header = colors.header;
+        auto blocks = colors.size() / 8;
+        header.blocksX = glm::ceil(glm::sqrt(blocks));
+
+        while ((colors.size() / 8) % header.blocksX != 0) {
+            writeColor(0);
+        }
+
+        header.blocksY = colors.size() / 8 / header.blocksX;
+    }
+
+    static glm::uvec2 mortonDecode(uint32_t id) {
+        glm::uvec2 res(0);
+        for (int i = 0; i < 32; i++)
+            res[i & 1] += (id >> i & 1) << (i >> 1);
+
+        return res;
+    }
+
+    static CompactOctree build(const std::filesystem::path &rawOctreePath, bool compressColors) {
+        CompactOctreeBuilder builder {.compressColors = compressColors};
+        TreeReader<RawOctree::Node> reader(rawOctreePath.string());
 
         TempTree tempTree;
         tempTree.emplace_back(); // fake node
@@ -148,8 +188,44 @@ struct CompactOctreeBuilder {
         std::vector<uint32_t> visited(tempTree.size());
         builder.reorder(tempTree.size() - 1, tempTree, compactOctree, visited);
 
-        compactOctree.colors = colors;
+        builder.completeColors();
+        compactOctree.colors = std::move(builder.colors);
 
         return compactOctree;
+    }
+
+
+    void dfs(uint v, uint32_t rawID, const CompactOctree &octree, Image<glm::u8vec3> &img, const std::vector<uint32_t> &rawColors) {
+        const auto &node = octree.dag[v];
+
+        if (node.isLeaf()) {
+            auto coords = mortonDecode(rawID);
+
+            uint32_t color = rawColors[rawID];
+
+            auto &pixel = img.get(coords);
+            pixel.x = color >> 16 & 0xff;
+            pixel.y = color >> 8 & 0xff;
+            pixel.z = color & 0xff;
+        } else {
+            uint32_t rawChildId = rawID;
+
+            for (unsigned int child : node.children) {
+                if (child != 0) {
+                    dfs(child, rawChildId, octree, img, rawColors);
+                    rawChildId += octree.dag[child].leafs;
+                }
+            }
+        }
+    }
+
+    void createImage(const CompactOctree &octree, const std::string &path, const std::vector<uint32_t> &rawColors) {
+        int side = glm::ceil(glm::sqrt(rawColors.size()));
+
+        Image<glm::u8vec3> img(side * 2, side * 2, 3);
+
+        dfs(0, 0, octree, img, rawColors);
+
+        img.saveToDisk(path);
     }
 };
