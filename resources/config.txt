@@ -1,2 +1,2 @@
-resources/saharov/ data/test/
-resources/saharov/ data/test/sah
+resources/citywall/ data/citywall/
+resources/citywall/ data/citywall/compact

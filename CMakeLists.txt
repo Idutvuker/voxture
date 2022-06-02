@@ -17,11 +17,8 @@ target_include_directories("ImGui" PUBLIC ${IMGUI_PATH})
 
 set(COMMON_DEPS ImGui glfw glad ${CMAKE_DL_LIBS})
 
-add_executable(viewer src/viewer.cpp ${INIT_EXTERNAL})
-target_link_libraries(viewer PUBLIC ${COMMON_DEPS})
-
-add_executable(builder src/builder.cpp ${INIT_EXTERNAL})
-target_link_libraries(builder PUBLIC ${COMMON_DEPS})
+add_executable(main src/main.cpp ${INIT_EXTERNAL})
+target_link_libraries(main PUBLIC ${COMMON_DEPS})
 
 
 #if(MSVC)
