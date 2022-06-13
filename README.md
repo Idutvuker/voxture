@@ -1,6 +1,13 @@
-## Clone
+## Clone and build
 
-`git clone --recurse-submodules https://github.com/Idutvuker/voxture.git`
+```
+git clone --recurse-submodules https://github.com/Idutvuker/voxture.git voxture
+cd voxture
+mkdir build
+cd build
+cmake ..
+make
+```
 
 ## Running the app
 `./voxture builder` - run builder
