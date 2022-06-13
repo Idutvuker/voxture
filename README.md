@@ -1,11 +1,15 @@
-## Options
-`resources/config.txt` - paths to read/write data  
+## Clone
 
-`src/common/constants.hpp` - global constants
+`git clone --recurse-submodules https://github.com/Idutvuker/voxture.git`
 
 ## Running the app
+`./voxture builder` - run builder
+
 `./voxture viewer` - run viewer
 
 `./voxture benchmark` - run benchmark
 
-`./voxture builder` - run builder
+## Options
+`resources/config.txt` - paths to read/write data  
+
+`src/common/constants.hpp` - global constants
