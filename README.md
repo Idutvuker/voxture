@@ -1,11 +1,25 @@
-## Options
-`resources/config.txt` - paths to read/write data  
+## Clone and build
 
-`src/common/constants.hpp` - global constants
+GLFW library is required
+
+```
+git clone --recurse-submodules https://github.com/Idutvuker/voxture.git voxture
+cd voxture
+mkdir build
+cd build
+cmake ..
+make
+make link_res
+```
 
 ## Running the app
+`./voxture builder` - run builder
+
 `./voxture viewer` - run viewer
 
 `./voxture benchmark` - run benchmark
 
-`./voxture builder` - run builder
+## Options
+`resources/config.txt` - paths to read/write data  
+
+`src/common/constants.hpp` - global constants
