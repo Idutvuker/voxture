@@ -1,2 +1,3 @@
-resources/saharov/ data/test/
-resources/saharov/ data/test/sah
+bundleDir: resources/citywall
+builderOutputDir: data/test
+viewerTexture: data/citywall/compact

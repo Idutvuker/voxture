@@ -19,14 +19,12 @@ float tick() {
     return elapsed.count();
 }
 
-void viewer(bool benchmark) {
-    Config config("resources/config.txt");
-
+void viewer(const Config &config, bool benchmark) {
     ModelViewer *app;
     if (config.viewerTexturePath == "UV")
-        app = new ModelViewerUV(config.viewerBundlePath);
+        app = new ModelViewerUV(config.bundlePath);
     else
-        app = new ModelViewerOctree(config.viewerBundlePath, config.viewerTexturePath);
+        app = new ModelViewerOctree(config.bundlePath, config.viewerTexturePath);
 
     if (benchmark)
         app->runBenchmark();
@@ -36,38 +34,36 @@ void viewer(bool benchmark) {
     delete app;
 }
 
-void builder() {
-    Config config("resources/config.txt");
-//
-//    FullTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
-//
-//    tick();
-//    fs::path output = builder.buildFull();
+void builder(const Config &config) {
+    FullTreeBuilder builder(config.bundlePath, config.builderOutPath);
 
     tick();
-    DiskTree::merge("data/citywall/0_282.tree", "data/citywall/282_564.tree", "data/citywall/0_564.tree");
+    fs::path output = builder.buildFull();
+
     float elapsed = tick();
 
     std::cout << "Raw build finished! Elapsed time: " << elapsed << std::endl;
 
-    CompactOctreeBuilder::build("data/citywall/0_564.tree", true).saveToDisk(config.builderOutPath + "compact");
+    CompactOctreeBuilder::build(output, true).saveToDisk(config.builderOutPath / "compact");
     elapsed = tick();
 
     std::cout << "Compact build finished! Elapsed time: " << elapsed << std::endl;
 }
 
 int main(int argc, char *argv[]) {
+    Config config("resources/config.txt");
+
     if (argc == 1)
         throw std::invalid_argument("Not enough arguments");
 
     auto command = std::string(argv[1]);
 
     if (command == "benchmark")
-        viewer(true);
+        viewer(config, true);
     else if (command == "viewer")
-        viewer(false);
+        viewer(config, false);
     else if (command == "builder")
-        builder();
+        builder(config);
 
     return 0;
 }

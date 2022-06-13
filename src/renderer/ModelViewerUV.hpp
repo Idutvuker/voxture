@@ -10,9 +10,9 @@ struct ModelViewerUV : ModelViewer {
     UVTexModel model{bundle.mesh, res.texModelSP};
     Image<glm::u8vec3> atlas;
 
-    explicit ModelViewerUV(const std::string &bundlePath) :
-            bundle(bundlePath + "model.ply"),
-            atlas(bundlePath + "texture.jpg") {}
+    explicit ModelViewerUV(const std::filesystem::path &bundlePath) :
+            bundle(bundlePath / "model.ply"),
+            atlas(bundlePath / "texture.jpg") {}
 
     void loadTexture() {
         GLuint texID;

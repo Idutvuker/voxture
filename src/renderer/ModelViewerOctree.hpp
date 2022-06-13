@@ -177,8 +177,8 @@ struct ModelViewerOctree : ModelViewer {
 
     std::vector<glm::mat4> savedCameras = Benchmark::getCameras();
 
-    ModelViewerOctree(const std::string &bundlePath, const std::string &octreePath) :
-            bundle(bundlePath + "model.ply"),
+    ModelViewerOctree(const std::filesystem::path &bundlePath, const std::string &octreePath) :
+            bundle(bundlePath / "model.ply"),
             octree(octreePath)
     {}
 };

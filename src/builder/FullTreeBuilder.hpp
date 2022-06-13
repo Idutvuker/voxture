@@ -12,6 +12,7 @@
 
 #include <functional>
 #include <filesystem>
+#include <utility>
 
 #include "stb_image_write.h"
 
@@ -19,7 +20,7 @@ namespace fs = std::filesystem;
 
 struct FullTreeBuilder {
     Bundle<> bundle;
-    std::string outputPath;
+    std::filesystem::path outputPath;
 
     GLFWContext context {100, 100, false};
     Resources res;
@@ -45,7 +46,7 @@ struct FullTreeBuilder {
         if (rightTree.empty())
             return leftTree;
 
-        fs::path newPath = outputPath + (std::to_string(left) + '_' + std::to_string(right)) + ".tree";
+        fs::path newPath = outputPath / (std::to_string(left) + '_' + std::to_string(right) + ".tree");
 
         DiskTree::merge(leftTree.string(), rightTree.string(), newPath.string());
 
@@ -62,7 +63,7 @@ struct FullTreeBuilder {
 
         if (buildCompact) {
             std::cout << "Building compact octree" << std::endl;
-            CompactOctreeBuilder::build(fullTree, true).saveToDisk(outputPath + "compact");
+            CompactOctreeBuilder::build(fullTree, true).saveToDisk(outputPath / "texture");
         }
 
         return fullTree;
@@ -82,7 +83,7 @@ struct FullTreeBuilder {
             auto photo = cam.photoInfo.loadImage();
             auto octree = treeBuilder.buildTree(MVP, focalLength, depthMap, photo);
 
-            auto newPath = fs::path(outputPath + std::to_string(cameraId) + ".tree");
+            auto newPath = fs::path(outputPath / (std::to_string(cameraId) + ".tree"));
             DiskTree::save(octree, newPath.string());
 
             return newPath;
@@ -135,9 +136,9 @@ struct FullTreeBuilder {
         }
     };
 
-    explicit FullTreeBuilder(const std::string &bundlePath, const std::string &_outputPath) :
-        bundle(bundlePath + "model.ply", bundlePath + "cameras.out", bundlePath + "list.txt"),
-        outputPath(_outputPath)
+    explicit FullTreeBuilder(const std::filesystem::path &bundlePath, std::filesystem::path _outputPath) :
+        bundle(bundlePath / "model.ply", bundlePath / "cameras.out", bundlePath / "list.txt"),
+        outputPath(std::move(_outputPath))
         {}
 };
 

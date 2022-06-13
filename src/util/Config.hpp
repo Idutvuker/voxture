@@ -4,16 +4,36 @@
 #include <string>
 
 struct Config {
-    std::string builderBundlePath;
-    std::string builderOutPath;
-    std::string viewerBundlePath;
-    std::string viewerTexturePath;
-    std::string options;
+    std::filesystem::path bundlePath;
+    std::filesystem::path builderOutPath;
+    std::filesystem::path viewerTexturePath;
 
     Config(const std::string &path) {
         std::ifstream input(path);
-        input >> builderBundlePath >> builderOutPath;
-        input >> viewerBundlePath >> viewerTexturePath;
-        input >> options;
+
+        std::string token;
+        while (input >> token) {
+            if (token == "bundleDir:") {
+                input >> token;
+                bundlePath = token;
+            }
+
+            else if (token == "builderOutputDir:") {
+                input >> token;
+                builderOutPath = token;
+            }
+
+            else if (token == "viewerTexture:") {
+                input >> token;
+                viewerTexturePath = token;
+            }
+        }
+
+        assert(!bundlePath.empty());
+        assert(!builderOutPath.empty());
+        assert(!viewerTexturePath.empty());
+
+        assert(is_directory(bundlePath));
+        assert(is_directory(builderOutPath));
     }
 };
