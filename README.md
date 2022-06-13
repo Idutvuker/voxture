@@ -13,11 +13,11 @@ make link_res
 ```
 
 ## Running the app
-`./voxture builder` - run builder
+`./main builder` - run builder
 
-`./voxture viewer` - run viewer
+`./main viewer` - run viewer
 
-`./voxture benchmark` - run benchmark
+`./main benchmark` - run benchmark
 
 ## Options
 `resources/config.txt` - paths to read/write data  
