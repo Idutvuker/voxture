@@ -1,5 +1,7 @@
 ## Clone and build
 
+GLFW library is required
+
 ```
 git clone --recurse-submodules https://github.com/Idutvuker/voxture.git voxture
 cd voxture
