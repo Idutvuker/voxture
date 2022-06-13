@@ -44,7 +44,7 @@ void builder(const Config &config) {
 
     std::cout << "Raw build finished! Elapsed time: " << elapsed << std::endl;
 
-    CompactOctreeBuilder::build(output, true).saveToDisk(config.builderOutPath / "compact");
+    CompactOctreeBuilder::build(output, true).saveToDisk(config.builderOutPath / "texture");
     elapsed = tick();
 
     std::cout << "Compact build finished! Elapsed time: " << elapsed << std::endl;

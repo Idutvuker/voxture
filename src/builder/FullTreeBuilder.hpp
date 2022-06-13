@@ -58,13 +58,8 @@ struct FullTreeBuilder {
         return newPath;
     }
 
-    fs::path buildFull(bool buildCompact = false) {
+    fs::path buildFull() {
         auto fullTree = buildRec(0, bundle.cameras.size());
-
-        if (buildCompact) {
-            std::cout << "Building compact octree" << std::endl;
-            CompactOctreeBuilder::build(fullTree, true).saveToDisk(outputPath / "texture");
-        }
 
         return fullTree;
     }

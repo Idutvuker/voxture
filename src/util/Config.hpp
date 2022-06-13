@@ -21,6 +21,10 @@ struct Config {
             else if (token == "builderOutputDir:") {
                 input >> token;
                 builderOutPath = token;
+
+                if (!exists(builderOutPath)) {
+                    create_directory(builderOutPath);
+                }
             }
 
             else if (token == "viewerTexture:") {
