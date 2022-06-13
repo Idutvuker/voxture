@@ -20,14 +20,6 @@ set(COMMON_DEPS ImGui glfw glad ${CMAKE_DL_LIBS})
 add_executable(main src/main.cpp ${INIT_EXTERNAL})
 target_link_libraries(main PUBLIC ${COMMON_DEPS})
 
-
-#if(MSVC)
-#    target_compile_options(${TARGET_NAME} PRIVATE /W4 /WX)
-#else()
-#    target_compile_options(${TARGET_NAME} PRIVATE -Wextra -Wpedantic -Werror)
-#endif()
-
-
 set(build_resources ${CMAKE_BINARY_DIR}/resources)
 set(src_resources ${CMAKE_SOURCE_DIR}/resources)
 add_custom_target(link_res COMMAND ${CMAKE_COMMAND} -E create_symlink ${src_resources} ${build_resources})

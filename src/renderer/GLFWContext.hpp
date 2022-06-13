@@ -5,6 +5,7 @@
 #include <backends/imgui_impl_opengl3.h>
 
 #include "mygl.hpp"
+#include "../common/constants.hpp"
 
 struct GLFWContext {
     const int windowWidth;
@@ -22,7 +23,7 @@ struct GLFWContext {
         GLOBAL_SCROLL_Y += int(dy);
     }
 
-    GLFWContext(int _windowWidth = 800, int _windowHeight = 800, bool windowVisible = true) :
+    GLFWContext(int _windowWidth = WINDOW_WIDTH, int _windowHeight = WINDOW_HEIGHT, bool windowVisible = true) :
             windowWidth(_windowWidth), windowHeight(_windowHeight) {
         if (!glfwInit())
             throw std::runtime_error("GLFW failed to initialize");

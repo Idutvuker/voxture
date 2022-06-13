@@ -1,0 +1,11 @@
+citywall
+raw: 18217678068
+dag: 883368072
+comp colors: 158455612
+
+saharov
+raw: 3017939040
+rawT: 2682612480
+rawC: 335326560
+dag: 155753784
+comp colors: 27766164

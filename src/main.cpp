@@ -38,16 +38,19 @@ void viewer(bool benchmark) {
 
 void builder() {
     Config config("resources/config.txt");
-
-    FullTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
+//
+//    FullTreeBuilder builder(config.builderBundlePath, config.builderOutPath);
+//
+//    tick();
+//    fs::path output = builder.buildFull();
 
     tick();
-    fs::path output = builder.buildFull();
+    DiskTree::merge("data/citywall/0_282.tree", "data/citywall/282_564.tree", "data/citywall/0_564.tree");
     float elapsed = tick();
 
     std::cout << "Raw build finished! Elapsed time: " << elapsed << std::endl;
 
-    CompactOctreeBuilder::build(output, false).saveToDisk(config.builderOutPath + "compact");
+    CompactOctreeBuilder::build("data/citywall/0_564.tree", true).saveToDisk(config.builderOutPath + "compact");
     elapsed = tick();
 
     std::cout << "Compact build finished! Elapsed time: " << elapsed << std::endl;

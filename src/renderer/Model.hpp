@@ -61,8 +61,6 @@ struct OctreeTexModel : Drawable {
         auto blocksX = octree.colors.header.blocksX;
         auto blocksY = octree.colors.header.blocksY;
 
-        Log.info({blocksX * blocksY, blocksX, blocksY, octree.dag.size(), octree.colors.size()});
-
         auto width = GLsizei(blocksX * 4);
         auto height = GLsizei(blocksY * 4);
 
