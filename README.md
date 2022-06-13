@@ -9,6 +9,7 @@ mkdir build
 cd build
 cmake ..
 make
+make link_res
 ```
 
 ## Running the app
