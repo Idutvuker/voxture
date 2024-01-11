@@ -23,3 +23,8 @@ make link_res
 `resources/config.txt` - paths to read/write data  
 
 `src/common/constants.hpp` - global constants
+
+## Images
+![Saharov](https://github.com/Idutvuker/voxture/assets/6796129/b5741817-a3b3-4dd6-ba25-16c8ecd0d83a)
+
+![Citywall](https://github.com/Idutvuker/voxture/assets/6796129/b1b0d043-c4ff-440f-831e-ffb008a72a0b)
